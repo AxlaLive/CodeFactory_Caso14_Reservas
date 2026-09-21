@@ -16,6 +16,7 @@ import com.codefactory.reservas.repository.ServicioRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -112,5 +113,8 @@ public class CitaService {
         if (request.motivo() == null || request.motivo().isBlank()) {
             throw new ValidationException("El motivo es obligatorio.");
         }
+    }
+    public List<Cita> consultarPorRangoFechas(LocalDate inicio, LocalDate fin) {
+        return citaRepository.findByFechaBetween(inicio, fin);
     }
 }
