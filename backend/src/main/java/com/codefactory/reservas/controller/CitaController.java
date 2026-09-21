@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/citas")
@@ -32,5 +34,12 @@ public class CitaController {
         } catch (BusinessConflictException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
         }
+    }
+    @GetMapping("/rango")
+    public ResponseEntity<List<Cita>> consultarAgendaPorRango(
+            @RequestParam("inicio") LocalDate inicio,
+            @RequestParam("fin") LocalDate fin) {
+        List<Cita> citas = citaService.consultarPorRangoFechas(inicio, fin);
+        return ResponseEntity.ok(citas);
     }
 }

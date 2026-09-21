@@ -34,4 +34,5 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
                                       @Param("espacioId") Long espacioId,
                                       @Param("horaInicio") LocalTime horaInicio,
                                       @Param("horaFin") LocalTime horaFin);
+    List<Cita> findByFechaBetween(LocalDate fechaInicio, LocalDate fechaFin);
 }
