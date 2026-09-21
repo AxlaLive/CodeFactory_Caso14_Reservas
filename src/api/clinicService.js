@@ -4,6 +4,23 @@ const STORAGE_KEYS = {
   spaces: 'dentia-spaces-v1',
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+const AUTH_STORAGE_KEY = 'dentia-auth'
+
+async function authRequest(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: { 'Content-Type': 'application/json', ...options.headers },
+    ...options,
+  })
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null)
+    throw new Error(body?.message || (response.status === 401 ? 'Usuario o contraseña incorrectos.' : 'No fue posible iniciar sesión.'))
+  }
+
+  return response.json()
+}
+
 const initialProfessionals = [
   { id: 'prof-001', name: 'Daniel Rojas', role: 'Odontologia general' },
   { id: 'prof-002', name: 'Laura Martinez', role: 'Ortodoncia' },
@@ -77,11 +94,15 @@ export const spaceService = {
 
 export const authService = {
   login: async ({ username, password }) => {
-    if (username !== 'admin' || password !== 'dentia123') throw new Error('Usuario o contraseña incorrectos.')
-    window.localStorage.setItem('dentia-session', JSON.stringify({ username, role: 'Administrador' }))
-    return wait({ username, role: 'Administrador' })
+    const response = await authRequest('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    })
+    const session = { token: response.token, username: response.username, role: response.role }
+    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
+    return session
   },
-  session: () => read('dentia-session', null),
-  logout: () => window.localStorage.removeItem('dentia-session'),
+  session: () => read(AUTH_STORAGE_KEY, null),
+  logout: () => window.localStorage.removeItem(AUTH_STORAGE_KEY),
 }
 
