@@ -45,7 +45,7 @@ export default function LoginPage({ onLogin }) {
         <button className="primary-button login-button" type="submit">
           Ingresar al panel <span>→</span>
         </button>
-        <small>Demo temporal: admin / dentia123</small>
+        <small>Acceso administrador: admin / dentia123 · Los profesionales ingresan con las credenciales asignadas.</small>
       </form>
     </div>
   )
