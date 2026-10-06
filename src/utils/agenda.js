@@ -1,6 +1,8 @@
-export const SLOT_MINUTES = 30
-export const DAY_START = 8 * 60
-export const DAY_END = 18 * 60
+export const DAY_START = 7 * 60
+export const DAY_END = 20 * 60
+export const SNAP_MINUTES = 15
+export const SNAP_OPTIONS = 15
+export const PX_PER_MINUTE = 1.6
 
 export function toDateKey(date) {
   return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-')
@@ -28,13 +30,97 @@ export function getWeekStart(date) {
   return result
 }
 
+// Lunes a sábado (6 columnas, sin domingo).
 export function getWeekDays(date) {
   const monday = getWeekStart(date)
-  return Array.from({ length: 7 }, (_, index) => { const day = new Date(monday); day.setDate(monday.getDate() + index); return day })
+  return Array.from({ length: 6 }, (_, index) => { const day = new Date(monday); day.setDate(monday.getDate() + index); return day })
 }
 
-export function getSlots() {
-  return Array.from({ length: (DAY_END - DAY_START) / SLOT_MINUTES }, (_, index) => formatTime(DAY_START + index * SLOT_MINUTES))
+
+export function addMinutes(value, minutes) {
+  return formatTime(timeToMinutes(value) + Number(minutes))
+}
+
+// La franja ocupada de una cita incluye el buffer posterior.
+export function occupiedEnd(item) {
+  return timeToMinutes(item.bufferEndTime || item.endTime)
+}
+
+export function isCancelled(item) {
+  return item.status === 'cancelled'
+}
+
+// Regla crítica: una cita no puede chocar por hora de inicio ni por intervalo,
+// comparando tanto el profesional como el consultorio asignado.
+export function findConflict({ date, startTime, endTime, professionalId, spaceId, excludeId }, appointments) {
+  return appointments.find((item) => {
+    if (item.id === excludeId || isCancelled(item)) return false
+    if (item.date !== date) return false
+    const sameResource = item.professionalId === professionalId || item.spaceId === spaceId
+    if (!sameResource) return false
+    return overlaps(startTime, endTime, item.startTime, item.bufferEndTime || item.endTime)
+  }) || null
+}
+
+// Compara contra los bloqueos administrativos del profesional (descansos/tareas).
+export function findBlockConflict({ date, startTime, endTime, professionalId }, blocks = []) {
+  return blocks.find((block) => block.professionalId === professionalId && block.date === date && overlaps(startTime, endTime, block.startTime, block.endTime)) || null
+}
+
+// Construye las columnas de la agenda. Cada columna se organiza cronológica
+// (más temprano arriba) y calcula posición/altura según la duración real del
+// intervalo, ya que los slots pueden tener duraciones distintas.
+export function buildDayColumns(appointments, blocks, weekDays) {
+  return weekDays.map((day) => {
+    const dateKey = toDateKey(day)
+    const entries = []
+    appointments.filter((item) => item.date === dateKey && !isCancelled(item)).forEach((item) => {
+      const startMinutes = timeToMinutes(item.startTime)
+      const endMinutes = timeToMinutes(item.endTime)
+      const bufferEnd = occupiedEnd(item)
+      entries.push({
+        kind: 'appointment', order: item.receivedAt || 0, data: item, startMinutes, endMinutes,
+        top: (startMinutes - DAY_START) * PX_PER_MINUTE,
+        height: Math.max((endMinutes - startMinutes) * PX_PER_MINUTE, 34),
+        bufferTop: (endMinutes - DAY_START) * PX_PER_MINUTE,
+        bufferHeight: Math.max((bufferEnd - endMinutes) * PX_PER_MINUTE, 12),
+      })
+    })
+    ;(blocks || []).filter((block) => block.date === dateKey).forEach((block) => {
+      const startMinutes = timeToMinutes(block.startTime)
+      const endMinutes = timeToMinutes(block.endTime)
+      entries.push({
+        kind: 'block', order: 0, data: block, startMinutes, endMinutes,
+        top: (startMinutes - DAY_START) * PX_PER_MINUTE,
+        height: Math.max((endMinutes - startMinutes) * PX_PER_MINUTE, 30),
+      })
+    })
+    // Orden cronológico; ante la misma hora, primero el asignado antes.
+    entries.sort((a, b) => a.startMinutes - b.startMinutes || a.order - b.order)
+    return { date: dateKey, day, entries }
+  })
+}
+
+// Posiciones horarias candidatas para el selector de hora.
+export function getTimeOptions(step = SNAP_OPTIONS) {
+  const options = []
+  for (let minute = DAY_START; minute <= DAY_END; minute += step) options.push(formatTime(minute))
+  return options
+}
+
+// Para cada hora candidata indica si la cita (con su duración y buffer) cabe
+// libre, choca con una cita o choca con un bloqueo del profesional.
+export function getSlotAvailability({ date, options, duration, buffer, professionalId, spaceId, excludeId }, appointments, blocks) {
+  return options.map((time) => {
+    const endTime = addMinutes(time, duration)
+    const bufferEndTime = addMinutes(time, duration + (buffer || 0))
+    if (timeToMinutes(time) + duration > DAY_END) return { time, endTime, bufferEndTime, available: false, reason: 'close' }
+    const appointmentConflict = findConflict({ date, startTime: time, endTime, professionalId, spaceId, excludeId }, appointments)
+    if (appointmentConflict) return { time, endTime, bufferEndTime, available: false, reason: 'occupied', conflict: appointmentConflict }
+    const blockConflict = findBlockConflict({ date, startTime: time, endTime, professionalId }, blocks)
+    if (blockConflict) return { time, endTime, bufferEndTime, available: false, reason: 'blocked', conflict: blockConflict }
+    return { time, endTime, bufferEndTime, available: true }
+  })
 }
 
 export function overlaps(startA, endA, startB, endB) {
@@ -46,9 +132,21 @@ export function getEndTime(startTime, duration) {
 }
 
 export function formatDay(date) {
-  return date.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric' })
+  return date.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric' })
+}
+
+export function formatDayShort(date) {
+  return date.toLocaleDateString('es-CO', { weekday: 'long' })
 }
 
 export function formatMonth(date) {
   return date.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })
+}
+
+export function formatLongDate(dateKey) {
+  return fromDateKey(dateKey).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })
+}
+
+export function capitalize(value) {
+  return value ? value.charAt(0).toUpperCase() + value.slice(1) : value
 }

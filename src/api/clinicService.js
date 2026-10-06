@@ -1,7 +1,8 @@
 const STORAGE_KEYS = {
-  appointments: 'dentia-appointments-v2',
-  professionals: 'dentia-professionals-v1',
+  appointments: 'dentia-appointments-v3',
+  professionals: 'dentia-professionals-v2',
   spaces: 'dentia-spaces-v1',
+  blocks: 'dentia-blocks-v1',
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
@@ -22,15 +23,70 @@ async function authRequest(path, options = {}) {
 }
 
 const initialProfessionals = [
-  { id: 'prof-001', name: 'Daniel Rojas', role: 'Odontologia general', identification: '1020304050', email: 'daniel.rojas@dentia.co', username: 'daniel.rojas', password: 'dentia123', active: true },
-  { id: 'prof-002', name: 'Laura Martinez', role: 'Ortodoncia', identification: '1020304051', email: 'laura.martinez@dentia.co', username: 'laura.martinez', password: 'dentia123', active: true },
+  { id: 'prof-001', name: 'Daniel Rojas', roleType: 'professional', role: 'Odontólogo general', identification: '1020304050', email: 'daniel.rojas@dentia.co', username: 'daniel.rojas', password: 'dentia123', active: true },
+  { id: 'prof-002', name: 'Laura Martinez', roleType: 'professional', role: 'Ortodoncista', identification: '1020304051', email: 'laura.martinez@dentia.co', username: 'laura.martinez', password: 'dentia123', active: true },
+  { id: 'prof-003', name: 'Sofía Herrera', roleType: 'receptionist', role: 'Recepcionista', identification: '1020304052', email: 'sofia.herrera@dentia.co', username: 'sofia.herrera', password: 'dentia123', active: true },
 ]
 
-const DEMO_CREDENTIALS = { username: 'admin', password: 'dentia123', role: 'admin' }
+const DEMO_CREDENTIALS = { username: 'admin', password: 'dentia123', role: 'receptionist' }
 
-const SPECIALTIES = ['Odontólogo general', 'Ortodoncista', 'Endodoncista', 'Orto pediatra']
+// Tipos de desempeño del profesional. Cada uno habilita su propio catálogo de
+// tipos de cita, y cada tipo de cita define la duración y el buffer (en minutos).
+export const SPECIALTY_TYPES = [
+  'Odontólogo general',
+  'Endodoncista',
+  'Periodoncista',
+  'Ortodoncista',
+  'Cirujano oral',
+  'Odontopediatra',
+]
 
-export { SPECIALTIES }
+// Catálogo de tipos de cita por tipo de profesional (duración + buffer).
+export const APPOINTMENT_TYPES = {
+  'Odontólogo general': [
+    { id: 'prof-general-profilaxis', name: 'Profilaxis', duration: 30, buffer: 10 },
+    { id: 'prof-general-revision', name: 'Revisión general', duration: 15, buffer: 5 },
+    { id: 'prof-general-restauracion', name: 'Restauración de empastes o calzas', duration: 30, buffer: 10 },
+    { id: 'prof-general-exodoncia', name: 'Exodoncia', duration: 60, buffer: 15 },
+    { id: 'prof-general-control', name: 'Control', duration: 15, buffer: 5 },
+  ],
+  Endodoncista: [
+    { id: 'endo-endodoncia', name: 'Endodoncia', duration: 120, buffer: 15 },
+  ],
+  Periodoncista: [
+    { id: 'perio-raspado', name: 'Raspado y alisado radicular', duration: 60, buffer: 15 },
+  ],
+  Ortodoncista: [
+    { id: 'orto-instalacion', name: 'Instalación de aparatología', duration: 60, buffer: 10 },
+    { id: 'orto-control', name: 'Control periódico por extracción', duration: 15, buffer: 5 },
+  ],
+  'Cirujano oral': [
+    { id: 'cirugia-maxilofacial', name: 'Cirugía maxilofacial', duration: 120, buffer: 20 },
+    { id: 'cirugia-exodoncia', name: 'Exodoncia', duration: 60, buffer: 15 },
+    { id: 'cirugia-control', name: 'Control cirugía', duration: 15, buffer: 10 },
+  ],
+  Odontopediatra: [
+    { id: 'pediatra-revision', name: 'Revisión y evaluación', duration: 45, buffer: 10 },
+    { id: 'pediatra-control', name: 'Control', duration: 30, buffer: 10 },
+  ],
+}
+
+// Tipos de bloqueo que el profesional puede reservar en su agenda personal.
+export const BLOCK_TYPES = [
+  { id: 'break', name: 'Descanso' },
+  { id: 'admin', name: 'Tarea administrativa' },
+]
+
+export function appointmentTypesFor(specialty) {
+  return APPOINTMENT_TYPES[specialty] || []
+}
+
+export function findAppointmentType(specialty, typeId) {
+  return appointmentTypesFor(specialty).find((item) => item.id === typeId) || null
+}
+
+// Compatibilidad con el formulario de registro de trabajadores.
+export const SPECIALTIES = SPECIALTY_TYPES
 
 const initialSpaces = [
   { id: 'space-001', name: 'Consultorio general 1', type: 'Consultorio general' },
@@ -38,9 +94,15 @@ const initialSpaces = [
 ]
 
 const initialAppointments = [
-  { id: 'apt-001', patientId: 'patient-001', patientName: 'Mariana Torres', professionalId: 'prof-001', professionalName: 'Daniel Rojas', specialty: 'Odontologia general', spaceId: 'space-001', spaceName: 'Consultorio general 1', date: '2026-09-16', startTime: '08:30', endTime: '09:15', status: 'scheduled', notes: 'Primera consulta' },
-  { id: 'apt-002', patientId: 'patient-002', patientName: 'Carlos Ramirez', professionalId: 'prof-002', professionalName: 'Laura Martinez', specialty: 'Ortodoncia', spaceId: 'space-002', spaceName: 'Sala especializada', date: '2026-09-17', startTime: '10:00', endTime: '11:00', status: 'scheduled', notes: 'Control mensual' },
-  { id: 'apt-003', patientId: 'patient-003', patientName: 'Valentina Gomez', professionalId: 'prof-001', professionalName: 'Daniel Rojas', specialty: 'Odontologia general', spaceId: 'space-001', spaceName: 'Consultorio general 1', date: '2026-09-18', startTime: '14:00', endTime: '15:00', status: 'scheduled', notes: '' },
+  { id: 'apt-001', receivedAt: 1, patientKind: 'unregistered', patientId: '1098765432', patientName: 'Mariana Torres', patientAge: 28, patientPhone: '3105558899', patientEmail: 'mariana@correo.co', professionalId: 'prof-001', professionalName: 'Daniel Rojas', specialty: 'Odontólogo general', typeId: 'prof-general-profilaxis', typeName: 'Profilaxis', spaceId: 'space-001', spaceName: 'Consultorio general 1', date: '2026-09-16', startTime: '08:30', endTime: '09:00', bufferEndTime: '09:10', status: 'scheduled', notes: 'Primera consulta' },
+  { id: 'apt-002', receivedAt: 2, patientKind: 'unregistered', patientId: '1087654321', patientName: 'Carlos Ramirez', patientAge: 34, patientPhone: '3114447766', patientEmail: 'carlos@correo.co', professionalId: 'prof-002', professionalName: 'Laura Martinez', specialty: 'Ortodoncista', typeId: 'orto-instalacion', typeName: 'Instalación de aparatología', spaceId: 'space-002', spaceName: 'Sala especializada', date: '2026-09-17', startTime: '10:00', endTime: '11:00', bufferEndTime: '11:10', status: 'scheduled', notes: 'Control mensual' },
+  { id: 'apt-003', receivedAt: 3, patientKind: 'unregistered', patientId: '1076543210', patientName: 'Valentina Gomez', patientAge: 21, patientPhone: '3123336644', patientEmail: 'valentina@correo.co', professionalId: 'prof-001', professionalName: 'Daniel Rojas', specialty: 'Odontólogo general', typeId: 'prof-general-restauracion', typeName: 'Restauración de empastes o calzas', spaceId: 'space-001', spaceName: 'Consultorio general 1', date: '2026-09-18', startTime: '14:00', endTime: '14:30', bufferEndTime: '14:40', status: 'scheduled', notes: '' },
+  { id: 'apt-004', receivedAt: 4, patientKind: 'unregistered', patientId: '1065432109', patientName: 'Andrés Beltrán', patientAge: 45, patientPhone: '3132225533', patientEmail: 'andres@correo.co', professionalId: 'prof-001', professionalName: 'Daniel Rojas', specialty: 'Odontólogo general', typeId: 'prof-general-exodoncia', typeName: 'Exodoncia', spaceId: 'space-002', spaceName: 'Sala especializada', date: '2026-09-16', startTime: '08:30', endTime: '09:30', bufferEndTime: '09:45', status: 'scheduled', notes: 'Cita simultánea en otro consultorio' },
+]
+
+// Espacios de agenda bloqueados por el propio profesional (descansos / tareas).
+const initialBlocks = [
+  { id: 'blk-001', professionalId: 'prof-001', date: '2026-09-16', startTime: '12:00', endTime: '13:00', type: 'break', label: 'Almuerzo' },
 ]
 
 function read(key, fallback) {
@@ -58,6 +120,22 @@ function write(key, value) {
 
 function wait(value) {
   return new Promise((resolve) => window.setTimeout(() => resolve(value), 120))
+}
+
+export const blockService = {
+  list: async () => wait(read(STORAGE_KEYS.blocks, initialBlocks)),
+  save: async (block) => {
+    const current = read(STORAGE_KEYS.blocks, initialBlocks)
+    const item = { ...block, id: block.id || `blk-${Date.now()}` }
+    const next = current.some((entry) => entry.id === item.id) ? current.map((entry) => entry.id === item.id ? item : entry) : [...current, item]
+    write(STORAGE_KEYS.blocks, next)
+    return wait(item)
+  },
+  remove: async (id) => {
+    const current = read(STORAGE_KEYS.blocks, initialBlocks)
+    write(STORAGE_KEYS.blocks, current.filter((entry) => entry.id !== id))
+    return wait(id)
+  },
 }
 
 export const appointmentService = {
@@ -125,7 +203,7 @@ export const authService = {
     const normalizedPass = password.trim()
 
     if (normalizedUser === DEMO_CREDENTIALS.username && normalizedPass === DEMO_CREDENTIALS.password) {
-      const session = { username: DEMO_CREDENTIALS.username, name: 'Administrador', role: 'admin' }
+      const session = { username: DEMO_CREDENTIALS.username, name: 'Recepción Dentia', role: 'receptionist' }
       window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
       return session
     }
@@ -137,7 +215,8 @@ export const authService = {
 
     if (professional) {
       if (professional.active === false) throw new Error('Tu usuario está inactivo. Contacta al administrador.')
-      const session = { username: professional.username, name: professional.name, role: professional.roleType || 'professional', specialty: professional.role, id: professional.id }
+      const role = professional.roleType === 'receptionist' ? 'receptionist' : 'professional'
+      const session = { username: professional.username, name: professional.name, role, specialty: professional.role, id: professional.id }
       window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
       return session
     }

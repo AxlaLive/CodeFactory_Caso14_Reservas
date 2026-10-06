@@ -35,3 +35,98 @@
 .danger-button { color: #b26e68; }
 .danger-button:hover { color: #96564f; }
 @media (max-width: 680px) { .header-status { display: none; }.profile-chip div { display: none; }.role-options { grid-template-columns: 1fr; }.detail-list { grid-template-columns: 1fr; }.detail-actions { flex-direction: column-reverse; gap: 6px; } }
+/* ============================================================
+   HU: Reestructuracion del modulo de agenda + perfil del profesional
+   ============================================================ */
+
+/* --- Barra de semana contenida en un recuadro con scroll interno --- */
+.week-actions button:hover { border-color: #b8d9c2; color: #2f8969; }
+.weekly-scroll { max-height: 62vh; overflow: auto; }
+
+.week-board { min-width: 900px; }
+.board-header, .board-body { display: grid; grid-template-columns: 56px repeat(6, minmax(120px, 1fr)); }
+
+.board-corner { height: 66px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: #fbfdfc; }
+
+/* Encabezado de columna = boton "Nueva cita" al pasar el cursor */
+.day-heading { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 66px; padding: 4px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); color: #6f837a; background: #fff; font-size: 10px; font-weight: 700; text-transform: capitalize; transition: background .15s, color .15s; }
+.day-heading:hover { color: #1f5646; background: #e4f6ea; }
+.day-heading.read-only { cursor: default; }
+.day-heading.read-only:hover { color: #6f837a; background: #fff; }
+.day-heading .day-name { display: block; }
+.day-heading .day-cta { display: none; color: #2f8969; font-size: 10px; }
+.day-heading:hover .day-cta { display: block; }
+.day-heading:hover .day-name { display: none; }
+.day-heading b { padding: 2px 6px; border-radius: 8px; color: #398060; background: #e4f4ea; font-size: 8px; }
+
+/* --- Cuerpo: columnas sin cuadricula, slots en orden cronologico --- */
+.board-body { position: relative; }
+.chart-lanes { position: absolute; left: 56px; right: 0; top: 0; z-index: 0; pointer-events: none; }
+.chart-lane { position: absolute; left: 0; right: 0; height: 1px; background: #eef3ef; }
+.time-column { position: relative; z-index: 1; }
+.chart-hour { display: block; height: 96px; padding: 6px 8px 0 0; color: #a3b1aa; font-size: 9px; text-align: right; }
+
+.day-column { position: relative; z-index: 1; min-height: 1248px; border-right: 1px solid #f1f5f2; }
+
+.slot-group { position: absolute; left: 3px; right: 3px; }
+.slot-appointment { display: flex; flex-direction: column; width: 100%; padding: 5px 6px; border-left: 3px solid #4ba579; border-radius: 5px; color: #34604f; background: #e9f7ee; text-align: left; overflow: hidden; transition: box-shadow .15s, transform .15s; }
+.slot-appointment:hover { box-shadow: 0 6px 18px rgba(47,137,105,.22); }
+.slot-appointment.read-only { cursor: default; border-left-color: #7fb6a0; background: #eef5f1; }
+.slot-appointment strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
+.slot-appointment span, .slot-appointment small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; color: #6d8c7d; font-size: 8px; }
+
+.buffer, .slot-buffer { position: absolute; left: 0; right: 0; }
+.slot-buffer { display: flex; align-items: center; padding: 0 6px; border-left: 3px solid #cfe3d7; border-radius: 0 0 5px 5px; color: #9bb3a6; background: repeating-linear-gradient(45deg, #f4f9f6, #f4f9f6 5px, #eef5f0 5px, #eef5f0 10px); }
+.slot-buffer span { font-size: 7px; letter-spacing: .05em; text-transform: uppercase; }
+
+.slot-block { position: absolute; left: 3px; right: 3px; display: flex; flex-direction: column; justify-content: center; padding: 4px 6px; border-left: 3px solid #b9c9c2; border-radius: 5px; color: #5f756b; background: repeating-linear-gradient(45deg, #f2f6f4, #f2f6f4 6px, #e9f0ec 6px, #e9f0ec 12px); overflow: hidden; }
+.slot-block.admin { border-left-color: #d3bb8a; color: #857250; background: repeating-linear-gradient(45deg, #fbf6ea, #fbf6ea 6px, #f6efdd 6px, #f6efdd 12px); }
+.slot-block strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; }
+.slot-block span { margin-top: 2px; font-size: 8px; }
+
+.legend-block { background: repeating-linear-gradient(45deg, #e9f0ec, #e9f0ec 3px, #fdfefe 3px, #fdfefe 6px); border: 1px solid #cddbd4; }
+.legend-buffer { background: #cfe3d7; }
+
+/* --- Formulario de cita por secciones (franjas) --- */
+.appointment-form { width: min(100%, 660px); }
+.form-section { padding: 16px 0; border-top: 1px solid var(--line); }
+.form-section:first-of-type { border-top: 0; }
+.form-section h3 { margin: 0 0 12px; color: #3f5951; font-family: Manrope, sans-serif; font-size: 13px; }
+
+.type-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.type-option { display: block; padding: 9px 11px; border: 1px solid #dce7e0; border-radius: 7px; color: #597068; background: #fff; text-align: left; transition: border-color .15s, background .15s; }
+.type-option strong { display: block; font-size: 11px; }
+.type-option span { display: block; margin-top: 3px; color: #96a49d; font-size: 9px; }
+.type-option.active { border-color: #5eaf8a; background: #f2faf4; box-shadow: 0 0 0 3px #e3f4e9; }
+.type-option.active strong { color: #2f8969; }
+
+.field-hint { margin: 8px 0 0; color: #96a49d; font-size: 10px; font-style: normal; }
+.field-error { display: block; margin-top: 6px; color: #bc6b63; font-size: 9px; }
+.empty-hint { color: #96a49d; font-size: 11px; }
+
+.time-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.time-summary div { padding: 10px; border: 1px solid #e9efeb; border-radius: 7px; background: #f8fbf9; }
+.time-summary span { display: block; color: #92a09a; font-size: 9px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.time-summary strong { display: block; margin-top: 4px; color: #3f5951; font-size: 13px; }
+.picker-open { margin-top: 12px; padding: 0 15px; min-height: 39px; border: 1px solid #5eaf8a !important; color: #2f8969 !important; border-radius: 6px; font-weight: 700; }
+.picker-open:hover { background: #f2faf4; }
+
+/* --- Selector de hora: agenda del profesional --- */
+.picker-layer { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; padding: 20px; background: rgba(27,55,54,.35); }
+.slot-picker { width: min(100%, 620px); max-height: calc(100vh - 60px); overflow: auto; padding: 22px; border-radius: 10px; background: #fff; box-shadow: 0 20px 60px rgba(24,57,48,.22); }
+.picker-subtitle { margin: 6px 0 0; color: #92a09a; font-size: 10px; }
+.picker-legend { margin: 14px 0; }
+.slot-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+.slot-cell { display: flex; flex-direction: column; align-items: center; padding: 8px 6px; border: 1px solid #d3e7db; border-radius: 7px; color: #34604f; background: #f2faf4; transition: border-color .15s, background .15s; }
+.slot-cell:hover { border-color: #5eaf8a; background: #e7f6ed; }
+.slot-cell strong { font-size: 12px; }
+.slot-cell small { margin-top: 3px; color: #8ba99a; font-size: 9px; }
+.slot-cell.occupied { border-color: #e6d9d7; color: #b3918d; background: #faf1ef; cursor: not-allowed; }
+.slot-cell.occupied:hover { border-color: #e6d9d7; background: #faf1ef; }
+.slot-cell.selected { border-color: #2f8969; background: #d9f0e3; box-shadow: 0 0 0 3px #cbead9; }
+
+/* --- Detalle de cita --- */
+.detail-full { grid-column: 1 / -1; }
+
+/* --- Formulario de bloqueo y utilidades --- */
+.block-form { width: min(100%, 520px); }
