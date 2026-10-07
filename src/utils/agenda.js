@@ -79,9 +79,10 @@ export function buildDayColumns(appointments, blocks, weekDays) {
     appointments.filter((item) => item.date === dateKey && !isCancelled(item)).forEach((item) => {
       const startMinutes = timeToMinutes(item.startTime)
       const endMinutes = timeToMinutes(item.endTime)
+      const bufferMinutes = Math.max(occupiedEnd(item) - endMinutes, 0)
       entries.push({
         kind: 'appointment', order: item.receivedAt || 0, data: item, startMinutes, endMinutes,
-        hasBuffer: occupiedEnd(item) > endMinutes,
+        hasBuffer: bufferMinutes > 0, bufferMinutes,
       })
     })
     ;(blocks || []).filter((block) => block.date === dateKey).forEach((block) => {

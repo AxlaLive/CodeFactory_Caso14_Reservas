@@ -73,7 +73,7 @@
 .slot-appointment span, .slot-appointment small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; color: #6d8c7d; font-size: 8px; }
 
 .slot-buffer { display: flex; align-items: center; height: 20px; padding: 0 6px; border-left: 3px solid #cfe3d7; border-radius: 0 0 5px 5px; color: #9bb3a6; background: repeating-linear-gradient(45deg, #f4f9f6, #f4f9f6 5px, #eef5f0 5px, #eef5f0 10px); }
-.slot-buffer span { font-size: 7px; letter-spacing: .05em; text-transform: uppercase; }
+.slot-buffer span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 7px; letter-spacing: .05em; text-transform: uppercase; }
 
 .slot-block { display: flex; flex-direction: column; justify-content: center; height: 56px; padding: 4px 6px; border-left: 3px solid #b9c9c2; border-radius: 5px; color: #5f756b; background: repeating-linear-gradient(45deg, #f2f6f4, #f2f6f4 6px, #e9f0ec 6px, #e9f0ec 12px); overflow: hidden; }
 .slot-block.admin { border-left-color: #d3bb8a; color: #857250; background: repeating-linear-gradient(45deg, #fbf6ea, #fbf6ea 6px, #f6efdd 6px, #f6efdd 12px); }

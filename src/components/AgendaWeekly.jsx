@@ -7,8 +7,8 @@ export default function AgendaWeekly({ weekDays, appointments, blocks = [], show
 }
 
 function AppointmentBlock({ entry, readOnly, onSelect }) {
-  const { data, hasBuffer } = entry
-  return <div className="slot-group"><button className={readOnly ? 'slot-appointment read-only' : 'slot-appointment'} onClick={() => onSelect(data)} title={`${data.patientName} · ${data.typeName}`}><strong>{data.patientName}</strong><span>{data.startTime} - {data.endTime}</span><small>{data.professionalName} · {data.spaceName}</small></button>{hasBuffer && <div className="slot-buffer"><span>Buffer</span></div>}</div>
+  const { data, hasBuffer, bufferMinutes } = entry
+  return <div className="slot-group"><button className={readOnly ? 'slot-appointment read-only' : 'slot-appointment'} onClick={() => onSelect(data)} title={`${data.patientName} · ${data.typeName}`}><strong>{data.patientName}</strong><span>{data.startTime} - {data.endTime}</span><small>{data.professionalName} · {data.spaceName}</small></button>{hasBuffer && <div className="slot-buffer"><span>Buffer {bufferMinutes}min</span></div>}</div>
 }
 
 function BlockBlock({ entry }) {
