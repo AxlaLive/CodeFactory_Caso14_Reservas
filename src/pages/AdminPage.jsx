@@ -227,10 +227,6 @@ export default function AdminPage({
                       <i className="legend-buffer" />
                       Buffer
                     </span>
-                    <span>
-                      <i className="legend-block" />
-                      Descanso / tarea
-                    </span>
                   </div>
                 </div>
               </section>
@@ -238,6 +234,7 @@ export default function AdminPage({
                 weekDays={weekDays}
                 appointments={appointments}
                 blocks={blocks}
+                showBlocks={false}
                 onPreviousWeek={() =>
                   onChangeWeek(
                     new Date(

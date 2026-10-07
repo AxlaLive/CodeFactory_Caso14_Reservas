@@ -227,6 +227,7 @@ export default function ProfessionalPage({
               weekDays={weekDays}
               appointments={appointments}
               blocks={blocks}
+              showBlocks={false}
               onPreviousWeek={() =>
                 onChangeWeek(
                   new Date(
