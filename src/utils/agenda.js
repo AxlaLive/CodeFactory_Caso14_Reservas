@@ -67,9 +67,11 @@ export function findBlockConflict({ date, startTime, endTime, professionalId }, 
   return blocks.find((block) => block.professionalId === professionalId && block.date === date && overlaps(startTime, endTime, block.startTime, block.endTime)) || null
 }
 
-// Construye las columnas de la agenda. Cada columna se organiza cronológica
-// (más temprano arriba) y calcula posición/altura según la duración real del
-// intervalo, ya que los slots pueden tener duraciones distintas.
+// Construye las columnas de la agenda. Cada columna (día de la semana) se
+// organiza cronológica (más temprano arriba) apilando las entradas una debajo
+// de otra en flujo normal: no hay cuadrícula temporal que module posición ni
+// altura, por lo que todos los slots tienen el mismo tamaño y la misma
+// separación. La hora de inicio solo determina el orden de apilado.
 export function buildDayColumns(appointments, blocks, weekDays) {
   return weekDays.map((day) => {
     const dateKey = toDateKey(day)
@@ -77,13 +79,9 @@ export function buildDayColumns(appointments, blocks, weekDays) {
     appointments.filter((item) => item.date === dateKey && !isCancelled(item)).forEach((item) => {
       const startMinutes = timeToMinutes(item.startTime)
       const endMinutes = timeToMinutes(item.endTime)
-      const bufferEnd = occupiedEnd(item)
       entries.push({
         kind: 'appointment', order: item.receivedAt || 0, data: item, startMinutes, endMinutes,
-        top: (startMinutes - DAY_START) * PX_PER_MINUTE,
-        height: Math.max((endMinutes - startMinutes) * PX_PER_MINUTE, 34),
-        bufferTop: (endMinutes - DAY_START) * PX_PER_MINUTE,
-        bufferHeight: Math.max((bufferEnd - endMinutes) * PX_PER_MINUTE, 12),
+        hasBuffer: occupiedEnd(item) > endMinutes,
       })
     })
     ;(blocks || []).filter((block) => block.date === dateKey).forEach((block) => {
@@ -91,8 +89,6 @@ export function buildDayColumns(appointments, blocks, weekDays) {
       const endMinutes = timeToMinutes(block.endTime)
       entries.push({
         kind: 'block', order: 0, data: block, startMinutes, endMinutes,
-        top: (startMinutes - DAY_START) * PX_PER_MINUTE,
-        height: Math.max((endMinutes - startMinutes) * PX_PER_MINUTE, 30),
       })
     })
     // Orden cronológico; ante la misma hora, primero el asignado antes.

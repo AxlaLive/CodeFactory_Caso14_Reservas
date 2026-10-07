@@ -44,9 +44,7 @@
 .weekly-scroll { max-height: 62vh; overflow: auto; }
 
 .week-board { min-width: 900px; }
-.board-header, .board-body { display: grid; grid-template-columns: 56px repeat(6, minmax(120px, 1fr)); }
-
-.board-corner { height: 66px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: #fbfdfc; }
+.board-header, .board-body { display: grid; grid-template-columns: repeat(6, minmax(120px, 1fr)); }
 
 /* Encabezado de columna = boton "Nueva cita" al pasar el cursor */
 .day-heading { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 66px; padding: 4px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); color: #6f837a; background: #fff; font-size: 10px; font-weight: 700; text-transform: capitalize; transition: background .15s, color .15s; }
@@ -59,27 +57,25 @@
 .day-heading:hover .day-name { display: none; }
 .day-heading b { padding: 2px 6px; border-radius: 8px; color: #398060; background: #e4f4ea; font-size: 8px; }
 
-/* --- Cuerpo: columnas sin cuadricula, slots en orden cronologico --- */
-.board-body { position: relative; }
-.chart-lanes { position: absolute; left: 56px; right: 0; top: 0; z-index: 0; pointer-events: none; }
-.chart-lane { position: absolute; left: 0; right: 0; height: 1px; background: #eef3ef; }
-.time-column { position: relative; z-index: 1; }
-.chart-hour { display: block; height: 96px; padding: 6px 8px 0 0; color: #a3b1aa; font-size: 9px; text-align: right; }
+/* --- Cuerpo: columnas en flujo vertical, sin cuadricula temporal --- */
+/* Cada dia es una columna flex donde las citas se apilan una debajo de otra
+   segun su hora. Todas las citas, buffers y bloqueos tienen el mismo tamano
+   y la misma separacion, sin importar la duracion ni el hueco horario. */
+.board-body { align-items: start; }
+.day-column { display: flex; flex-direction: column; gap: 10px; min-height: 120px; padding: 12px 8px; border-right: 1px solid #f1f5f2; }
+.day-empty { padding: 6px 2px; color: #b3c1ba; font-size: 9px; text-align: center; }
 
-.day-column { position: relative; z-index: 1; min-height: 1248px; border-right: 1px solid #f1f5f2; }
-
-.slot-group { position: absolute; left: 3px; right: 3px; }
-.slot-appointment { display: flex; flex-direction: column; width: 100%; padding: 5px 6px; border-left: 3px solid #4ba579; border-radius: 5px; color: #34604f; background: #e9f7ee; text-align: left; overflow: hidden; transition: box-shadow .15s, transform .15s; }
+.slot-group { display: flex; flex-direction: column; gap: 2px; }
+.slot-appointment { display: flex; flex-direction: column; justify-content: center; height: 56px; padding: 5px 6px; border-left: 3px solid #4ba579; border-radius: 5px; color: #34604f; background: #e9f7ee; text-align: left; overflow: hidden; transition: box-shadow .15s, transform .15s; }
 .slot-appointment:hover { box-shadow: 0 6px 18px rgba(47,137,105,.22); }
 .slot-appointment.read-only { cursor: default; border-left-color: #7fb6a0; background: #eef5f1; }
 .slot-appointment strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
 .slot-appointment span, .slot-appointment small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; color: #6d8c7d; font-size: 8px; }
 
-.buffer, .slot-buffer { position: absolute; left: 0; right: 0; }
-.slot-buffer { display: flex; align-items: center; padding: 0 6px; border-left: 3px solid #cfe3d7; border-radius: 0 0 5px 5px; color: #9bb3a6; background: repeating-linear-gradient(45deg, #f4f9f6, #f4f9f6 5px, #eef5f0 5px, #eef5f0 10px); }
+.slot-buffer { display: flex; align-items: center; height: 20px; padding: 0 6px; border-left: 3px solid #cfe3d7; border-radius: 0 0 5px 5px; color: #9bb3a6; background: repeating-linear-gradient(45deg, #f4f9f6, #f4f9f6 5px, #eef5f0 5px, #eef5f0 10px); }
 .slot-buffer span { font-size: 7px; letter-spacing: .05em; text-transform: uppercase; }
 
-.slot-block { position: absolute; left: 3px; right: 3px; display: flex; flex-direction: column; justify-content: center; padding: 4px 6px; border-left: 3px solid #b9c9c2; border-radius: 5px; color: #5f756b; background: repeating-linear-gradient(45deg, #f2f6f4, #f2f6f4 6px, #e9f0ec 6px, #e9f0ec 12px); overflow: hidden; }
+.slot-block { display: flex; flex-direction: column; justify-content: center; height: 56px; padding: 4px 6px; border-left: 3px solid #b9c9c2; border-radius: 5px; color: #5f756b; background: repeating-linear-gradient(45deg, #f2f6f4, #f2f6f4 6px, #e9f0ec 6px, #e9f0ec 12px); overflow: hidden; }
 .slot-block.admin { border-left-color: #d3bb8a; color: #857250; background: repeating-linear-gradient(45deg, #fbf6ea, #fbf6ea 6px, #f6efdd 6px, #f6efdd 12px); }
 .slot-block strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; }
 .slot-block span { margin-top: 2px; font-size: 8px; }
