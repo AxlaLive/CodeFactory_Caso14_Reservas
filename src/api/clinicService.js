@@ -3,6 +3,7 @@ const STORAGE_KEYS = {
   professionals: 'dentia-professionals-v2',
   spaces: 'dentia-spaces-v1',
   blocks: 'dentia-blocks-v1',
+  clients: 'dentia-clients-v1',
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
@@ -208,9 +209,21 @@ export const authService = {
       return session
     }
 
+    const clients = read(STORAGE_KEYS.clients, [])
+    const client = clients.find((item) =>
+      item.email?.toLowerCase() === normalizedUser.toLowerCase() ||
+      item.username?.toLowerCase() === normalizedUser.toLowerCase(),
+    )
+    if (client) {
+      if (client.password !== normalizedPass) throw new Error('El correo o la contraseña son incorrectos.')
+      const session = customerSession(client)
+      window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
+      return session
+    }
+
     const professionals = read(STORAGE_KEYS.professionals, initialProfessionals)
     const professional = professionals.find(
-      (item) => (item.username || '').toLowerCase() === normalizedUser.toLowerCase() && item.password === normalizedPass,
+      (item) => ((item.username || '').toLowerCase() === normalizedUser.toLowerCase() || (item.email || '').toLowerCase() === normalizedUser.toLowerCase()) && item.password === normalizedPass,
     )
 
     if (professional) {
@@ -229,7 +242,110 @@ export const authService = {
     window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
     return session
   },
+  registerCustomer: async (details) => {
+    const name = (details.name || '').trim()
+    const identification = (details.identification || '').trim()
+    const email = (details.email || '').trim().toLowerCase()
+    const username = (details.username || '').trim().toLowerCase()
+    const phone = (details.phone || '').trim()
+    const password = (details.password || '').trim()
+    if (!name || !identification || !email || !username || !phone || !password) {
+      throw new Error('Completa todos los campos obligatorios.')
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Ingresa un correo electrónico válido.')
+    if (!/^[a-zA-Z0-9._-]{4,30}$/.test(username)) throw new Error('El nombre de usuario debe tener de 4 a 30 caracteres: letras, números, punto, guion o guion bajo.')
+    if (!/^[\d\s()+-]{7,20}$/.test(phone) || phone.replace(/\D/g, '').length < 7) throw new Error('Ingresa un teléfono válido.')
+    if (password.length < 8) throw new Error('La contraseña debe tener al menos 8 caracteres.')
+
+    const clients = read(STORAGE_KEYS.clients, [])
+    const professionals = read(STORAGE_KEYS.professionals, initialProfessionals)
+    if (clients.some((item) => item.email === email)) throw new Error('Ya existe una cuenta con ese correo electrónico.')
+    if (clients.some((item) => item.identification === identification)) throw new Error('Ya existe una cuenta con ese documento.')
+    if (clients.some((item) => item.username?.toLowerCase() === username || item.email === username)) throw new Error('El nombre de usuario ya está en uso.')
+    if (professionals.some((item) => item.username?.toLowerCase() === username || item.email?.toLowerCase() === username || item.email?.toLowerCase() === email)) throw new Error('El correo o nombre de usuario ya está en uso.')
+
+    const client = {
+      ...details,
+      id: `client-${Date.now()}`,
+      name,
+      identification,
+      username,
+      email,
+      phone,
+      address: '',
+      emergencyContact: '',
+      password,
+    }
+    write(STORAGE_KEYS.clients, [...clients, client])
+    const session = customerSession(client)
+    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
+    return wait(session)
+  },
+  registerAdministrator: async (details) => {
+    const name = (details.name || '').trim()
+    const identification = (details.identification || '').trim()
+    const email = (details.email || '').trim().toLowerCase()
+    const username = (details.username || '').trim()
+    const password = (details.password || '').trim()
+
+    if (!name || !identification || !email || !username || !password) {
+      throw new Error('Completa todos los campos obligatorios.')
+    }
+    if (!/^[0-9]{5,15}$/.test(identification)) throw new Error('El documento debe contener entre 5 y 15 dígitos.')
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Ingresa un correo electrónico válido.')
+    if (username.length < 4) throw new Error('El usuario debe tener al menos 4 caracteres.')
+    if (username.toLowerCase() === DEMO_CREDENTIALS.username) throw new Error('Ese nombre de usuario está reservado.')
+    if (password.length < 8) throw new Error('La contraseña debe tener al menos 8 caracteres.')
+
+    const professionals = read(STORAGE_KEYS.professionals, initialProfessionals)
+    const clients = read(STORAGE_KEYS.clients, [])
+    if (professionals.some((item) => item.email?.toLowerCase() === email)) throw new Error('Ya existe una cuenta con ese correo electrónico.')
+    if (clients.some((item) => item.email === email || item.email === username.toLowerCase() || item.username?.toLowerCase() === email || item.username?.toLowerCase() === username.toLowerCase())) throw new Error('El correo o usuario ya pertenece a una cuenta de cliente.')
+    if (professionals.some((item) => item.identification === identification)) throw new Error('Ya existe una cuenta con ese documento.')
+    if (professionals.some((item) => item.username?.toLowerCase() === username.toLowerCase())) throw new Error('El nombre de usuario ya está en uso.')
+
+    const administrator = await professionalService.create({
+      name,
+      roleType: 'receptionist',
+      role: 'Recepcionista',
+      identification,
+      email,
+      username,
+      password,
+    })
+    const session = {
+      id: administrator.id,
+      username: administrator.username,
+      name: administrator.name,
+      role: 'receptionist',
+    }
+    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
+    return session
+  },
+  updateCustomer: async (id, changes) => {
+    const clients = read(STORAGE_KEYS.clients, [])
+    const client = clients.find((item) => item.id === id)
+    if (!client) throw new Error('No se encontró la cuenta del cliente.')
+    const updated = { ...client, ...changes, id, password: client.password }
+    write(STORAGE_KEYS.clients, clients.map((item) => item.id === id ? updated : item))
+    const session = customerSession(updated)
+    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
+    return wait(session)
+  },
   session: () => read(AUTH_STORAGE_KEY, null),
   logout: () => window.localStorage.removeItem(AUTH_STORAGE_KEY),
 }
 
+function customerSession(client) {
+  return {
+    id: client.id,
+    name: client.name,
+    identification: client.identification,
+    email: client.email,
+    username: client.username || '',
+    phone: client.phone,
+    address: client.address || '',
+    emergencyContact: client.emergencyContact || '',
+    role: 'client',
+  }
+}
