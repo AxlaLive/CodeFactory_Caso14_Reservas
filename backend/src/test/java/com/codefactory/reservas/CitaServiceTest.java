@@ -5,9 +5,12 @@ import com.codefactory.reservas.domain.EspacioFisico;
 import com.codefactory.reservas.domain.Paciente;
 import com.codefactory.reservas.domain.Profesional;
 import com.codefactory.reservas.domain.Servicio;
+import com.codefactory.reservas.domain.Disponibilidad;
+import com.codefactory.reservas.domain.TipoDisponibilidad;
 import com.codefactory.reservas.dto.CitaRequest;
 import com.codefactory.reservas.exception.BusinessConflictException;
 import com.codefactory.reservas.repository.CitaRepository;
+import com.codefactory.reservas.repository.DisponibilidadRepository;
 import com.codefactory.reservas.repository.EspacioFisicoRepository;
 import com.codefactory.reservas.repository.PacienteRepository;
 import com.codefactory.reservas.repository.ProfesionalRepository;
@@ -47,6 +50,9 @@ class CitaServiceTest {
     @Autowired
     private CitaRepository citaRepository;
 
+    @Autowired
+    private DisponibilidadRepository disponibilidadRepository;
+
     private Profesional profesional;
     private EspacioFisico espacio;
     private Paciente paciente;
@@ -54,7 +60,14 @@ class CitaServiceTest {
 
     @BeforeEach
     void setUp() {
-        profesional = profesionalRepository.save(new Profesional(null, "Dr. Ramírez", true));
+        profesional = profesionalRepository.save(Profesional.builder()
+                .nombre("Dr.")
+                .apellido("Ramírez")
+                .documento("10000001")
+                .especialidad("Medicina general")
+                .correo("ramirez@example.com")
+                .activo(true)
+                .build());
         espacio = espacioRepository.save(new EspacioFisico(null, "Consultorio 1", "CONSULTORIO", true));
         paciente = pacienteRepository.save(new Paciente(null, "Ana García", "12345678", true));
         servicio = servicioRepository.save(new Servicio(null, "Consulta general", 30));
@@ -124,7 +137,14 @@ class CitaServiceTest {
                 "PROGRAMADA"
         ));
 
-        Profesional otroProfesional = profesionalRepository.save(new Profesional(null, "Dra. López", true));
+        Profesional otroProfesional = profesionalRepository.save(Profesional.builder()
+                .nombre("Dra.")
+                .apellido("López")
+                .documento("10000002")
+                .especialidad("Medicina general")
+                .correo("lopez@example.com")
+                .activo(true)
+                .build());
 
         CitaRequest request = new CitaRequest(
                 LocalDate.of(2026, 9, 20),
@@ -139,5 +159,59 @@ class CitaServiceTest {
         assertThatThrownBy(() -> citaService.crearDesdeAgenda(request))
                 .isInstanceOf(BusinessConflictException.class)
                 .hasMessageContaining("espacio");
+    }
+
+    @Test
+    void shouldRejectAppointmentDuringProfessionalBreak() {
+        disponibilidadRepository.saveAndFlush(new Disponibilidad(
+                null,
+                profesional,
+                LocalDate.of(2026, 9, 20),
+                LocalTime.of(9, 0),
+                LocalTime.of(10, 0),
+                TipoDisponibilidad.BREAK,
+                "Descanso"
+        ));
+
+        CitaRequest request = new CitaRequest(
+                LocalDate.of(2026, 9, 20),
+                LocalTime.of(9, 15),
+                profesional.getId(),
+                espacio.getId(),
+                paciente.getId(),
+                servicio.getId(),
+                "Consulta durante descanso"
+        );
+
+        assertThatThrownBy(() -> citaService.crearDesdeAgenda(request))
+                .isInstanceOf(BusinessConflictException.class)
+                .hasMessageContaining("profesional");
+    }
+
+    @Test
+    void shouldRequireAppointmentToFitInsideDefinedAvailability() {
+        disponibilidadRepository.saveAndFlush(new Disponibilidad(
+                null,
+                profesional,
+                LocalDate.of(2026, 9, 20),
+                LocalTime.of(9, 0),
+                LocalTime.of(10, 0),
+                TipoDisponibilidad.AVAILABLE,
+                null
+        ));
+
+        CitaRequest request = new CitaRequest(
+                LocalDate.of(2026, 9, 20),
+                LocalTime.of(9, 45),
+                profesional.getId(),
+                espacio.getId(),
+                paciente.getId(),
+                servicio.getId(),
+                "Consulta fuera de disponibilidad"
+        );
+
+        assertThatThrownBy(() -> citaService.crearDesdeAgenda(request))
+                .isInstanceOf(BusinessConflictException.class)
+                .hasMessageContaining("profesional");
     }
 }
