@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class CitaService {
@@ -49,6 +50,17 @@ public class CitaService {
 
     @Transactional
     public Cita crearDesdeAgenda(CitaRequest request) {
+        return guardarDesdeAgenda(request, null);
+    }
+
+    @Transactional
+    public Optional<Cita> actualizarDesdeAgenda(Long citaId, CitaRequest request) {
+        return citaRepository.findById(citaId)
+                .filter(cita -> !"CANCELADA".equals(cita.getEstado()))
+                .map(cita -> guardarDesdeAgenda(request, cita));
+    }
+
+    private Cita guardarDesdeAgenda(CitaRequest request, Cita citaExistente) {
         validarCamposObligatorios(request);
 
         Profesional profesional = profesionalRepository.findById(request.profesionalId())
@@ -82,21 +94,25 @@ public class CitaService {
             throw new BusinessConflictException("El profesional no está disponible en ese horario.");
         }
 
-        List<Cita> conflictosProfesional = citaRepository.findConflictsByProfesional(
-                request.fecha(), request.profesionalId(), request.horaInicio(), horaFin
-        );
+        List<Cita> conflictosProfesional = citaExistente == null
+                ? citaRepository.findConflictsByProfesional(request.fecha(), request.profesionalId(),
+                        request.horaInicio(), horaFin)
+                : citaRepository.findConflictsByProfesionalExcludingCita(request.fecha(),
+                        request.profesionalId(), request.horaInicio(), horaFin, citaExistente.getId());
         if (!conflictosProfesional.isEmpty()) {
             throw new BusinessConflictException("El profesional no está disponible en ese horario.");
         }
 
-        List<Cita> conflictosEspacio = citaRepository.findConflictsByEspacio(
-                request.fecha(), request.espacioId(), request.horaInicio(), horaFin
-        );
+        List<Cita> conflictosEspacio = citaExistente == null
+                ? citaRepository.findConflictsByEspacio(request.fecha(), request.espacioId(),
+                        request.horaInicio(), horaFin)
+                : citaRepository.findConflictsByEspacioExcludingCita(request.fecha(),
+                        request.espacioId(), request.horaInicio(), horaFin, citaExistente.getId());
         if (!conflictosEspacio.isEmpty()) {
             throw new BusinessConflictException("El espacio físico no está disponible en ese horario.");
         }
 
-        Cita cita = new Cita();
+        Cita cita = citaExistente == null ? new Cita() : citaExistente;
         cita.setFecha(request.fecha());
         cita.setHoraInicio(request.horaInicio());
         cita.setHoraFin(horaFin);
@@ -138,5 +154,13 @@ public class CitaService {
     }
     public List<Cita> consultarPorRangoFechas(LocalDate inicio, LocalDate fin) {
         return citaRepository.findByFechaBetween(inicio, fin);
+    }
+
+    @Transactional
+    public Optional<Cita> cancelar(Long id) {
+        return citaRepository.findById(id).map(cita -> {
+            cita.setEstado("CANCELADA");
+            return citaRepository.save(cita);
+        });
     }
 }

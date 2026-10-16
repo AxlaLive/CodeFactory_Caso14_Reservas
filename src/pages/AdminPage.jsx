@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import AgendaWeekly from "../components/AgendaWeekly";
 import AppointmentDetail from "../components/AppointmentDetail";
 import AppointmentForm from "../components/AppointmentForm";
+import BlockForm from "../components/BlockForm";
 import ProfessionalDetail from "../components/ProfessionalDetail";
 import ProfessionalForm from "../components/ProfessionalForm";
 import ResourceManager from "../components/ResourceManager";
@@ -27,8 +28,10 @@ export default function AdminPage({
   const [appointmentForm, setAppointmentForm] = useState(null);
   const [detailAppointment, setDetailAppointment] = useState(null);
   const [professionalForm, setProfessionalForm] = useState(false);
+  const [blockFormOpen, setBlockFormOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState(null);
   const [notice, setNotice] = useState("");
+  const [pageError, setPageError] = useState("");
   const weekDays = useMemo(() => getWeekDays(weekDate), [weekDate]);
 
   useEffect(() => {
@@ -42,12 +45,19 @@ export default function AdminPage({
       setProfessionals(nextProfessionals);
       setSpaces(nextSpaces);
       setBlocks(nextBlocks);
-    });
+    }).catch((error) => setPageError(`No fue posible cargar la agenda: ${error.message}`));
   }, []);
 
   const notify = (message) => {
     setNotice(message);
     window.setTimeout(() => setNotice(""), 3000);
+  };
+
+  const saveBlock = async (data) => {
+    const saved = await blockService.save(data);
+    setBlocks((current) => [...current, saved]);
+    setBlockFormOpen(false);
+    notify("Disponibilidad guardada en la agenda compartida.");
   };
 
   const bookableProfessionals = professionals.filter(
@@ -210,6 +220,7 @@ export default function AdminPage({
         </header>
 
         <div className="admin-content">
+          {pageError && <div className="form-error">{pageError}</div>}
           {view === "agenda" && (
             <>
               <section className="agenda-intro">
@@ -229,12 +240,15 @@ export default function AdminPage({
                     </span>
                   </div>
                 </div>
+                <button className="primary-button" onClick={() => setBlockFormOpen(true)} disabled={!professionals.length}>
+                  ＋ Configurar disponibilidad
+                </button>
               </section>
               <AgendaWeekly
                 weekDays={weekDays}
                 appointments={appointments}
                 blocks={blocks}
-                showBlocks={false}
+                showBlocks
                 onPreviousWeek={() =>
                   onChangeWeek(
                     new Date(
@@ -259,6 +273,14 @@ export default function AdminPage({
               />
             </>
           )}
+          {blockFormOpen && (
+            <BlockForm
+              weekDate={weekDate}
+              professionals={bookableProfessionals}
+              onClose={() => setBlockFormOpen(false)}
+              onSave={saveBlock}
+            />
+          )}
 
           {view === "professionals" && (
             <section className="resource-page">
@@ -267,8 +289,7 @@ export default function AdminPage({
                   <span className="eyebrow">Administracion</span>
                   <h2>Equipo dentia</h2>
                   <p>
-                    Registra a los profesionales y recepcionistas que accederán
-                    a la agenda y a los recursos del sistema.
+                    Registra los profesionales que atenderán en la clínica.
                   </p>
                 </div>
                 <button

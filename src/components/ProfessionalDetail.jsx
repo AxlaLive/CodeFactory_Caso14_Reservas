@@ -44,11 +44,7 @@ export default function ProfessionalDetail({
         <dl className="detail-list">
           <div>
             <dt>Rol</dt>
-            <dd>
-              {professional.roleType === "receptionist"
-                ? "Recepcionista"
-                : "Profesional"}
-            </dd>
+            <dd>Profesional</dd>
           </div>
           <div>
             <dt>Especialidad</dt>
@@ -61,10 +57,6 @@ export default function ProfessionalDetail({
           <div>
             <dt>Correo electrónico</dt>
             <dd>{professional.email}</dd>
-          </div>
-          <div>
-            <dt>Nombre de usuario</dt>
-            <dd>{professional.username}</dd>
           </div>
         </dl>
 

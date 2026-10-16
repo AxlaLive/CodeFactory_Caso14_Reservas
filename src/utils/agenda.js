@@ -64,7 +64,7 @@ export function findConflict({ date, startTime, endTime, professionalId, spaceId
 
 // Compara contra los bloqueos administrativos del profesional (descansos/tareas).
 export function findBlockConflict({ date, startTime, endTime, professionalId }, blocks = []) {
-  return blocks.find((block) => block.professionalId === professionalId && block.date === date && overlaps(startTime, endTime, block.startTime, block.endTime)) || null
+  return blocks.find((block) => block.type !== 'available' && block.professionalId === professionalId && block.date === date && overlaps(startTime, endTime, block.startTime, block.endTime)) || null
 }
 
 // Construye las columnas de la agenda. Cada columna (día de la semana) se
@@ -114,6 +114,13 @@ export function getSlotAvailability({ date, options, duration, buffer, professio
     if (timeToMinutes(time) + duration > DAY_END) return { time, endTime, bufferEndTime, available: false, reason: 'close' }
     const appointmentConflict = findConflict({ date, startTime: time, endTime, professionalId, spaceId, excludeId }, appointments)
     if (appointmentConflict) return { time, endTime, bufferEndTime, available: false, reason: 'occupied', conflict: appointmentConflict }
+    const availabilityWindows = (blocks || []).filter((block) =>
+      block.type === 'available' && block.professionalId === professionalId && block.date === date,
+    )
+    if (availabilityWindows.length && !availabilityWindows.some((block) =>
+      timeToMinutes(block.startTime) <= timeToMinutes(time)
+      && timeToMinutes(block.endTime) >= timeToMinutes(endTime),
+    )) return { time, endTime, bufferEndTime, available: false, reason: 'availability' }
     const blockConflict = findBlockConflict({ date, startTime: time, endTime, professionalId }, blocks)
     if (blockConflict) return { time, endTime, bufferEndTime, available: false, reason: 'blocked', conflict: blockConflict }
     return { time, endTime, bufferEndTime, available: true }

@@ -60,11 +60,15 @@ export default function AppointmentForm({ value, professionals, spaces, appointm
     setErrors(nextErrors)
     return nextErrors
   }
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault()
     const nextErrors = validate()
     if (Object.keys(nextErrors).length) return
-    onSave({ ...form, id: form.id || `apt-${Date.now()}`, receivedAt: form.receivedAt || Date.now(), endTime, bufferEndTime, professionalName: selectedProfessional?.name || '', specialty: selectedProfessional?.role || '', typeName: selectedType?.name || '', spaceName: selectedSpace?.name || '' })
+    try {
+      await onSave({ ...form, id: form.id || `apt-${Date.now()}`, receivedAt: form.receivedAt || Date.now(), endTime, bufferEndTime, professionalName: selectedProfessional?.name || '', specialty: selectedProfessional?.role || '', typeName: selectedType?.name || '', spaceName: selectedSpace?.name || '' })
+    } catch (saveError) {
+      setErrors((current) => ({ ...current, availability: saveError.message }))
+    }
   }
 
   const openPicker = () => {

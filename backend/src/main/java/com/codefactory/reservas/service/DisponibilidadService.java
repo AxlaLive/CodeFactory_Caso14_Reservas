@@ -74,6 +74,12 @@ public class DisponibilidadService {
                 .toList();
     }
 
+    public List<DisponibilidadResponse> consultarTodas() {
+        return disponibilidadRepository.findAll().stream()
+                .map(DisponibilidadResponse::from)
+                .toList();
+    }
+
     @Transactional
     public DisponibilidadResponse consultar(Long id) {
         return disponibilidadRepository.findById(id)
