@@ -34,19 +34,17 @@ secrets in the hosting provider's environment settings; never commit them to
 this repository. Do not set `SPRING_JPA_HIBERNATE_DDL_AUTO` to `create` or
 `create-drop` in production.
 
-For a Render Web Service using this repository, set the root directory to the
-repository root and use:
+## Deploy the backend to Render
 
-```sh
-# Build command
-mvn -f backend/pom.xml clean package -DskipTests
+Create a **Web Service** from the GitHub repository and configure its runtime
+as **Docker**. Keep the root directory at the repository root and set the
+Dockerfile path to `Dockerfile`. Render builds the image and runs the packaged
+Spring Boot application. The Docker image runs the `prod` profile and binds to
+Render's `PORT` environment variable, defaulting to `8080` outside Render.
 
-# Start command
-java -jar backend/target/reservas-backend-0.0.1-SNAPSHOT.jar
-```
-
-The production profile binds Spring Boot to Render's `PORT` environment
-variable, defaulting to `8080` for local runs.
+Set the production database and JWT environment variables listed above on the
+Render Web Service. Do not put database credentials in Docker build arguments,
+the Dockerfile, or the image.
 
 Flyway applies pending migrations at startup. Add future schema changes as new
 `V<number>__description.sql` files; do not edit a migration that has already
