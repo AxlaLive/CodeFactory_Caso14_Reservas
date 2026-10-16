@@ -1,38 +1,187 @@
-const STORAGE_KEYS = {
-  appointments: 'dentia-appointments-v3',
-  professionals: 'dentia-professionals-v2',
-  spaces: 'dentia-spaces-v1',
-  blocks: 'dentia-blocks-v1',
-  clients: 'dentia-clients-v1',
-}
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+).replace(/\/+$/, '')
 const AUTH_STORAGE_KEY = 'dentia-auth'
 
-async function authRequest(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options,
-  })
+async function apiRequest(path, options = {}) {
+  const session = readSession()
+  const headers = { 'Content-Type': 'application/json', ...options.headers }
+  if (session?.token) headers.Authorization = `Bearer ${session.token}`
 
-  if (!response.ok) {
-    const body = await response.json().catch(() => null)
-    throw new Error(body?.message || (response.status === 401 ? 'Usuario o contraseña incorrectos.' : 'No fue posible iniciar sesión.'))
+  const response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers })
+  const responseText = await response.text()
+  let body = null
+  if (responseText) {
+    try {
+      body = JSON.parse(responseText)
+    } catch {
+      body = responseText
+    }
   }
 
-  return response.json()
+  if (!response.ok) {
+    const message = typeof body === 'string' ? body : body?.message
+    throw new Error(message || `La solicitud al servidor falló (${response.status}).`)
+  }
+  return body
 }
 
-const initialProfessionals = [
-  { id: 'prof-001', name: 'Daniel Rojas', roleType: 'professional', role: 'Odontólogo general', identification: '1020304050', email: 'daniel.rojas@dentia.co', username: 'daniel.rojas', password: 'dentia123', active: true },
-  { id: 'prof-002', name: 'Laura Martinez', roleType: 'professional', role: 'Ortodoncista', identification: '1020304051', email: 'laura.martinez@dentia.co', username: 'laura.martinez', password: 'dentia123', active: true },
-  { id: 'prof-003', name: 'Sofía Herrera', roleType: 'receptionist', role: 'Recepcionista', identification: '1020304052', email: 'sofia.herrera@dentia.co', username: 'sofia.herrera', password: 'dentia123', active: true },
-]
+function readSession() {
+  try {
+    const session = JSON.parse(window.localStorage.getItem(AUTH_STORAGE_KEY) || 'null')
+    return session?.token ? session : null
+  } catch {
+    return null
+  }
+}
 
-const DEMO_CREDENTIALS = { username: 'admin', password: 'dentia123', role: 'receptionist' }
+function idString(id) {
+  return id == null ? '' : String(id)
+}
 
-// Tipos de desempeño del profesional. Cada uno habilita su propio catálogo de
-// tipos de cita, y cada tipo de cita define la duración y el buffer (en minutos).
+function mapProfessional(item) {
+  return {
+    id: idString(item.id),
+    name: [item.nombre, item.apellido].filter(Boolean).join(' '),
+    roleType: 'professional',
+    role: item.especialidad,
+    identification: item.documento,
+    email: item.correo,
+    active: item.activo,
+  }
+}
+
+function mapSpace(item) {
+  return { id: idString(item.id), name: item.nombre, type: item.tipo, active: item.activo }
+}
+
+function mapAppointment(item) {
+  const patient = item.paciente || {}
+  const professional = item.profesional || {}
+  const space = item.espacioFisico || {}
+  const service = item.servicio || {}
+  return {
+    id: idString(item.id),
+    patientKind: 'unregistered',
+    patientId: patient.documento || '',
+    patientName: patient.nombre || '',
+    patientPhone: patient.telefono || '',
+    patientEmail: patient.correo || '',
+    professionalId: idString(professional.id),
+    professionalName: [professional.nombre, professional.apellido].filter(Boolean).join(' '),
+    specialty: professional.especialidad || '',
+    typeId: idString(service.id),
+    typeName: service.nombre || '',
+    spaceId: idString(space.id),
+    spaceName: space.nombre || '',
+    date: item.fecha,
+    startTime: item.horaInicio?.slice(0, 5) || '',
+    endTime: item.horaFin?.slice(0, 5) || '',
+    bufferEndTime: item.horaFin?.slice(0, 5) || '',
+    duration: service.duracionMinutos || 30,
+    status: item.estado === 'CANCELADA' ? 'cancelled' : 'scheduled',
+    notes: item.motivo || '',
+  }
+}
+
+function mapBlock(item) {
+  return {
+    id: idString(item.id),
+    professionalId: idString(item.profesionalId),
+    date: item.fecha,
+    startTime: item.horaInicio?.slice(0, 5) || '',
+    endTime: item.horaFin?.slice(0, 5) || '',
+    type: item.tipo === 'BREAK'
+      ? 'break'
+      : item.tipo === 'AVAILABLE'
+        ? 'available'
+        : item.tipo === 'UNAVAILABLE'
+          ? 'unavailable'
+        : item.tipo === 'OTHER'
+          ? 'other'
+          : 'admin',
+    label: item.motivo || '',
+  }
+}
+
+function availabilityRequest(block) {
+  return {
+    profesionalId: Number(block.professionalId),
+    fecha: block.date,
+    horaInicio: block.startTime,
+    horaFin: block.endTime,
+    tipo: block.type === 'break'
+      ? 'BREAK'
+      : block.type === 'available'
+        ? 'AVAILABLE'
+        : block.type === 'other'
+          ? 'OTHER'
+          : 'UNAVAILABLE',
+    motivo: block.label || null,
+  }
+}
+
+function appointmentRequest(appointment, patientId, serviceId) {
+  return {
+    fecha: appointment.date,
+    horaInicio: appointment.startTime,
+    profesionalId: Number(appointment.professionalId),
+    espacioId: Number(appointment.spaceId),
+    pacienteId: patientId,
+    servicioId: serviceId,
+    motivo: appointment.notes?.trim() || appointment.typeName || 'Cita',
+  }
+}
+
+async function getOrCreatePatient(appointment) {
+  const patients = await apiRequest('/pacientes')
+  const document = appointment.patientId.trim()
+  const existing = patients.find((item) => item.documento === document)
+  if (existing) return existing.id
+  const created = await apiRequest('/pacientes', {
+    method: 'POST',
+    body: JSON.stringify({
+      nombre: appointment.patientName.trim(),
+      documento: document,
+      telefono: appointment.patientPhone.trim(),
+      correo: appointment.patientEmail.trim() || null,
+      activo: true,
+    }),
+  })
+  return created.id
+}
+
+async function getOrCreateService(appointment) {
+  const services = await apiRequest('/servicios')
+  const existing = services.find((item) =>
+    item.nombre === appointment.typeName
+      && item.duracionMinutos === Number(appointment.duration),
+  )
+  if (existing) return existing.id
+
+  const created = await apiRequest('/servicios', {
+    method: 'POST',
+    body: JSON.stringify({
+      nombre: appointment.typeName,
+      duracionMinutos: Number(appointment.duration) || 30,
+    }),
+  })
+  return created.id
+}
+
+async function saveAppointment(appointment) {
+  const [patientId, serviceId] = await Promise.all([
+    getOrCreatePatient(appointment),
+    getOrCreateService(appointment),
+  ])
+  const existingId = /^\d+$/.test(String(appointment.id || '')) ? appointment.id : null
+  const saved = await apiRequest(existingId ? `/citas/${existingId}` : '/citas', {
+    method: existingId ? 'PUT' : 'POST',
+    body: JSON.stringify(appointmentRequest(appointment, patientId, serviceId)),
+  })
+  return mapAppointment(saved)
+}
+
 export const SPECIALTY_TYPES = [
   'Odontólogo general',
   'Endodoncista',
@@ -42,7 +191,6 @@ export const SPECIALTY_TYPES = [
   'Odontopediatra',
 ]
 
-// Catálogo de tipos de cita por tipo de profesional (duración + buffer).
 export const APPOINTMENT_TYPES = {
   'Odontólogo general': [
     { id: 'prof-general-profilaxis', name: 'Profilaxis', duration: 30, buffer: 10 },
@@ -51,12 +199,8 @@ export const APPOINTMENT_TYPES = {
     { id: 'prof-general-exodoncia', name: 'Exodoncia', duration: 60, buffer: 15 },
     { id: 'prof-general-control', name: 'Control', duration: 15, buffer: 5 },
   ],
-  Endodoncista: [
-    { id: 'endo-endodoncia', name: 'Endodoncia', duration: 120, buffer: 15 },
-  ],
-  Periodoncista: [
-    { id: 'perio-raspado', name: 'Raspado y alisado radicular', duration: 60, buffer: 15 },
-  ],
+  Endodoncista: [{ id: 'endo-endodoncia', name: 'Endodoncia', duration: 120, buffer: 15 }],
+  Periodoncista: [{ id: 'perio-raspado', name: 'Raspado y alisado radicular', duration: 60, buffer: 15 }],
   Ortodoncista: [
     { id: 'orto-instalacion', name: 'Instalación de aparatología', duration: 60, buffer: 10 },
     { id: 'orto-control', name: 'Control periódico por extracción', duration: 15, buffer: 5 },
@@ -72,10 +216,11 @@ export const APPOINTMENT_TYPES = {
   ],
 }
 
-// Tipos de bloqueo que el profesional puede reservar en su agenda personal.
 export const BLOCK_TYPES = [
+  { id: 'available', name: 'Horario de atención' },
+  { id: 'unavailable', name: 'No disponible' },
   { id: 'break', name: 'Descanso' },
-  { id: 'admin', name: 'Tarea administrativa' },
+  { id: 'other', name: 'Otro motivo' },
 ]
 
 export function appointmentTypesFor(specialty) {
@@ -86,266 +231,81 @@ export function findAppointmentType(specialty, typeId) {
   return appointmentTypesFor(specialty).find((item) => item.id === typeId) || null
 }
 
-// Compatibilidad con el formulario de registro de trabajadores.
 export const SPECIALTIES = SPECIALTY_TYPES
 
-const initialSpaces = [
-  { id: 'space-001', name: 'Consultorio general 1', type: 'Consultorio general' },
-  { id: 'space-002', name: 'Sala especializada', type: 'Sala especializada' },
-]
-
-const initialAppointments = [
-  { id: 'apt-001', receivedAt: 1, patientKind: 'unregistered', patientId: '1098765432', patientName: 'Mariana Torres', patientAge: 28, patientPhone: '3105558899', patientEmail: 'mariana@correo.co', professionalId: 'prof-001', professionalName: 'Daniel Rojas', specialty: 'Odontólogo general', typeId: 'prof-general-profilaxis', typeName: 'Profilaxis', spaceId: 'space-001', spaceName: 'Consultorio general 1', date: '2026-09-16', startTime: '08:30', endTime: '09:00', bufferEndTime: '09:10', status: 'scheduled', notes: 'Primera consulta' },
-  { id: 'apt-002', receivedAt: 2, patientKind: 'unregistered', patientId: '1087654321', patientName: 'Carlos Ramirez', patientAge: 34, patientPhone: '3114447766', patientEmail: 'carlos@correo.co', professionalId: 'prof-002', professionalName: 'Laura Martinez', specialty: 'Ortodoncista', typeId: 'orto-instalacion', typeName: 'Instalación de aparatología', spaceId: 'space-002', spaceName: 'Sala especializada', date: '2026-09-17', startTime: '10:00', endTime: '11:00', bufferEndTime: '11:10', status: 'scheduled', notes: 'Control mensual' },
-  { id: 'apt-003', receivedAt: 3, patientKind: 'unregistered', patientId: '1076543210', patientName: 'Valentina Gomez', patientAge: 21, patientPhone: '3123336644', patientEmail: 'valentina@correo.co', professionalId: 'prof-001', professionalName: 'Daniel Rojas', specialty: 'Odontólogo general', typeId: 'prof-general-restauracion', typeName: 'Restauración de empastes o calzas', spaceId: 'space-001', spaceName: 'Consultorio general 1', date: '2026-09-18', startTime: '14:00', endTime: '14:30', bufferEndTime: '14:40', status: 'scheduled', notes: '' },
-  { id: 'apt-004', receivedAt: 4, patientKind: 'unregistered', patientId: '1065432109', patientName: 'Andrés Beltrán', patientAge: 45, patientPhone: '3132225533', patientEmail: 'andres@correo.co', professionalId: 'prof-001', professionalName: 'Daniel Rojas', specialty: 'Odontólogo general', typeId: 'prof-general-exodoncia', typeName: 'Exodoncia', spaceId: 'space-002', spaceName: 'Sala especializada', date: '2026-09-16', startTime: '08:30', endTime: '09:30', bufferEndTime: '09:45', status: 'scheduled', notes: 'Cita simultánea en otro consultorio' },
-]
-
-// Espacios de agenda bloqueados por el propio profesional (descansos / tareas).
-const initialBlocks = [
-  { id: 'blk-001', professionalId: 'prof-001', date: '2026-09-16', startTime: '12:00', endTime: '13:00', type: 'break', label: 'Almuerzo' },
-]
-
-function read(key, fallback) {
-  try {
-    const stored = window.localStorage.getItem(key)
-    return stored ? JSON.parse(stored) : fallback
-  } catch {
-    return fallback
-  }
-}
-
-function write(key, value) {
-  window.localStorage.setItem(key, JSON.stringify(value))
-}
-
-function wait(value) {
-  return new Promise((resolve) => window.setTimeout(() => resolve(value), 120))
-}
-
 export const blockService = {
-  list: async () => wait(read(STORAGE_KEYS.blocks, initialBlocks)),
+  list: async () => (await apiRequest('/disponibilidades')).map(mapBlock),
   save: async (block) => {
-    const current = read(STORAGE_KEYS.blocks, initialBlocks)
-    const item = { ...block, id: block.id || `blk-${Date.now()}` }
-    const next = current.some((entry) => entry.id === item.id) ? current.map((entry) => entry.id === item.id ? item : entry) : [...current, item]
-    write(STORAGE_KEYS.blocks, next)
-    return wait(item)
+    const existingId = /^\d+$/.test(String(block.id || '')) ? block.id : null
+    const saved = await apiRequest(existingId ? `/disponibilidades/${existingId}` : '/disponibilidades', {
+      method: existingId ? 'PUT' : 'POST',
+      body: JSON.stringify(availabilityRequest(block)),
+    })
+    return mapBlock(saved)
   },
-  remove: async (id) => {
-    const current = read(STORAGE_KEYS.blocks, initialBlocks)
-    write(STORAGE_KEYS.blocks, current.filter((entry) => entry.id !== id))
-    return wait(id)
-  },
+  remove: async (id) => apiRequest(`/disponibilidades/${id}`, { method: 'DELETE' }),
 }
 
 export const appointmentService = {
-  list: async () => wait(read(STORAGE_KEYS.appointments, initialAppointments)),
-  save: async (appointment) => {
-    const current = read(STORAGE_KEYS.appointments, initialAppointments)
-    const next = current.some((item) => item.id === appointment.id) ? current.map((item) => item.id === appointment.id ? appointment : item) : [...current, appointment]
-    write(STORAGE_KEYS.appointments, next)
-    return wait(appointment)
+  list: async () => {
+    const params = new URLSearchParams({ inicio: '1900-01-01', fin: '9999-12-31' })
+    return (await apiRequest(`/citas/rango?${params}`)).map(mapAppointment)
   },
-  cancel: async (id) => {
-    const current = read(STORAGE_KEYS.appointments, initialAppointments)
-    const cancelled = current.map((item) => item.id === id ? { ...item, status: 'cancelled' } : item)
-    write(STORAGE_KEYS.appointments, cancelled)
-    return wait(cancelled.find((item) => item.id === id))
-  },
+  save: saveAppointment,
+  cancel: async (id) => mapAppointment(await apiRequest(`/citas/${id}/cancelar`, { method: 'PATCH' })),
 }
 
 export const professionalService = {
-  list: async () => wait(read(STORAGE_KEYS.professionals, initialProfessionals)),
+  list: async () => (await apiRequest('/v1/profesionales')).map(mapProfessional),
   create: async (data) => {
-    const current = read(STORAGE_KEYS.professionals, initialProfessionals)
-    const name = (data.name || '').trim().toLowerCase()
-    const identification = (data.identification || '').trim()
-    const username = (data.username || '').trim().toLowerCase()
-    if (current.some((item) => item.name.trim().toLowerCase() === name)) throw new Error('Ya existe un miembro del equipo con ese nombre.')
-    if (current.some((item) => (item.identification || '') === identification)) throw new Error('Ya existe un miembro del equipo con esa identificación.')
-    if (current.some((item) => (item.username || '').toLowerCase() === username)) throw new Error('El nombre de usuario ya está en uso.')
-    const item = { ...data, name: (data.name || '').trim(), username: (data.username || '').trim(), active: true, id: `prof-${Date.now()}` }
-    write(STORAGE_KEYS.professionals, [...current, item])
-    return wait(item)
+    const [nombre, ...apellidos] = data.name.trim().split(/\s+/)
+    const created = await apiRequest('/v1/profesionales', {
+      method: 'POST',
+      body: JSON.stringify({
+        nombre,
+        apellido: apellidos.join(' ') || 'No especificado',
+        documento: data.identification,
+        especialidad: data.role,
+        correo: data.email,
+        activo: true,
+      }),
+    })
+    return mapProfessional(created)
   },
   update: async (id, changes) => {
-    const current = read(STORAGE_KEYS.professionals, initialProfessionals)
-    let updated = null
-    const next = current.map((item) => {
-      if (item.id !== id) return item
-      updated = { ...item, ...changes }
-      return updated
+    const current = await apiRequest(`/v1/profesionales/${id}`)
+    const updated = await apiRequest(`/v1/profesionales/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ ...current, activo: changes.active }),
     })
-    write(STORAGE_KEYS.professionals, next)
-    return wait(updated)
+    return mapProfessional(updated)
   },
-  remove: async (id) => {
-    const current = read(STORAGE_KEYS.professionals, initialProfessionals)
-    write(STORAGE_KEYS.professionals, current.filter((item) => item.id !== id))
-    return wait(id)
-  },
+  remove: async (id) => apiRequest(`/v1/profesionales/${id}`, { method: 'DELETE' }),
 }
 
 export const spaceService = {
-  list: async () => wait(read(STORAGE_KEYS.spaces, initialSpaces)),
-  create: async (data) => {
-    const current = read(STORAGE_KEYS.spaces, initialSpaces)
-    if (current.some((item) => item.name.trim().toLowerCase() === data.name.trim().toLowerCase())) throw new Error('Ya existe un espacio con ese nombre.')
-    const item = { ...data, id: `space-${Date.now()}` }
-    write(STORAGE_KEYS.spaces, [...current, item])
-    return wait(item)
-  },
+  list: async () => (await apiRequest('/espacios')).map(mapSpace),
+  create: async (data) => mapSpace(await apiRequest('/espacios', {
+    method: 'POST',
+    body: JSON.stringify({ nombre: data.name, tipo: data.type, activo: true }),
+  })),
 }
 
 export const authService = {
   login: async ({ username, password }) => {
-    const normalizedUser = username.trim()
-    const normalizedPass = password.trim()
-
-    if (normalizedUser === DEMO_CREDENTIALS.username && normalizedPass === DEMO_CREDENTIALS.password) {
-      const session = { username: DEMO_CREDENTIALS.username, name: 'Recepción Dentia', role: 'receptionist' }
-      window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
-      return session
-    }
-
-    const clients = read(STORAGE_KEYS.clients, [])
-    const client = clients.find((item) =>
-      item.email?.toLowerCase() === normalizedUser.toLowerCase() ||
-      item.username?.toLowerCase() === normalizedUser.toLowerCase(),
-    )
-    if (client) {
-      if (client.password !== normalizedPass) throw new Error('El correo o la contraseña son incorrectos.')
-      const session = customerSession(client)
-      window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
-      return session
-    }
-
-    const professionals = read(STORAGE_KEYS.professionals, initialProfessionals)
-    const professional = professionals.find(
-      (item) => ((item.username || '').toLowerCase() === normalizedUser.toLowerCase() || (item.email || '').toLowerCase() === normalizedUser.toLowerCase()) && item.password === normalizedPass,
-    )
-
-    if (professional) {
-      if (professional.active === false) throw new Error('Tu usuario está inactivo. Contacta al administrador.')
-      const role = professional.roleType === 'receptionist' ? 'receptionist' : 'professional'
-      const session = { username: professional.username, name: professional.name, role, specialty: professional.role, id: professional.id }
-      window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
-      return session
-    }
-
-    const response = await authRequest('/auth/login', {
+    const response = await apiRequest('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ username: normalizedUser, password: normalizedPass }),
-    })
-    const session = { token: response.token, username: response.username, name: response.username, role: response.role }
-    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
-    return session
-  },
-  registerCustomer: async (details) => {
-    const name = (details.name || '').trim()
-    const identification = (details.identification || '').trim()
-    const email = (details.email || '').trim().toLowerCase()
-    const username = (details.username || '').trim().toLowerCase()
-    const phone = (details.phone || '').trim()
-    const password = (details.password || '').trim()
-    if (!name || !identification || !email || !username || !phone || !password) {
-      throw new Error('Completa todos los campos obligatorios.')
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Ingresa un correo electrónico válido.')
-    if (!/^[a-zA-Z0-9._-]{4,30}$/.test(username)) throw new Error('El nombre de usuario debe tener de 4 a 30 caracteres: letras, números, punto, guion o guion bajo.')
-    if (!/^[\d\s()+-]{7,20}$/.test(phone) || phone.replace(/\D/g, '').length < 7) throw new Error('Ingresa un teléfono válido.')
-    if (password.length < 8) throw new Error('La contraseña debe tener al menos 8 caracteres.')
-
-    const clients = read(STORAGE_KEYS.clients, [])
-    const professionals = read(STORAGE_KEYS.professionals, initialProfessionals)
-    if (clients.some((item) => item.email === email)) throw new Error('Ya existe una cuenta con ese correo electrónico.')
-    if (clients.some((item) => item.identification === identification)) throw new Error('Ya existe una cuenta con ese documento.')
-    if (clients.some((item) => item.username?.toLowerCase() === username || item.email === username)) throw new Error('El nombre de usuario ya está en uso.')
-    if (professionals.some((item) => item.username?.toLowerCase() === username || item.email?.toLowerCase() === username || item.email?.toLowerCase() === email)) throw new Error('El correo o nombre de usuario ya está en uso.')
-
-    const client = {
-      ...details,
-      id: `client-${Date.now()}`,
-      name,
-      identification,
-      username,
-      email,
-      phone,
-      address: '',
-      emergencyContact: '',
-      password,
-    }
-    write(STORAGE_KEYS.clients, [...clients, client])
-    const session = customerSession(client)
-    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
-    return wait(session)
-  },
-  registerAdministrator: async (details) => {
-    const name = (details.name || '').trim()
-    const identification = (details.identification || '').trim()
-    const email = (details.email || '').trim().toLowerCase()
-    const username = (details.username || '').trim()
-    const password = (details.password || '').trim()
-
-    if (!name || !identification || !email || !username || !password) {
-      throw new Error('Completa todos los campos obligatorios.')
-    }
-    if (!/^[0-9]{5,15}$/.test(identification)) throw new Error('El documento debe contener entre 5 y 15 dígitos.')
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Ingresa un correo electrónico válido.')
-    if (username.length < 4) throw new Error('El usuario debe tener al menos 4 caracteres.')
-    if (username.toLowerCase() === DEMO_CREDENTIALS.username) throw new Error('Ese nombre de usuario está reservado.')
-    if (password.length < 8) throw new Error('La contraseña debe tener al menos 8 caracteres.')
-
-    const professionals = read(STORAGE_KEYS.professionals, initialProfessionals)
-    const clients = read(STORAGE_KEYS.clients, [])
-    if (professionals.some((item) => item.email?.toLowerCase() === email)) throw new Error('Ya existe una cuenta con ese correo electrónico.')
-    if (clients.some((item) => item.email === email || item.email === username.toLowerCase() || item.username?.toLowerCase() === email || item.username?.toLowerCase() === username.toLowerCase())) throw new Error('El correo o usuario ya pertenece a una cuenta de cliente.')
-    if (professionals.some((item) => item.identification === identification)) throw new Error('Ya existe una cuenta con ese documento.')
-    if (professionals.some((item) => item.username?.toLowerCase() === username.toLowerCase())) throw new Error('El nombre de usuario ya está en uso.')
-
-    const administrator = await professionalService.create({
-      name,
-      roleType: 'receptionist',
-      role: 'Recepcionista',
-      identification,
-      email,
-      username,
-      password,
+      body: JSON.stringify({ username: username.trim(), password }),
     })
     const session = {
-      id: administrator.id,
-      username: administrator.username,
-      name: administrator.name,
-      role: 'receptionist',
+      token: response.token,
+      username: response.username,
+      name: response.username,
+      role: response.role === 'ROLE_ADMIN' ? 'admin' : response.role,
     }
     window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
     return session
   },
-  updateCustomer: async (id, changes) => {
-    const clients = read(STORAGE_KEYS.clients, [])
-    const client = clients.find((item) => item.id === id)
-    if (!client) throw new Error('No se encontró la cuenta del cliente.')
-    const updated = { ...client, ...changes, id, password: client.password }
-    write(STORAGE_KEYS.clients, clients.map((item) => item.id === id ? updated : item))
-    const session = customerSession(updated)
-    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
-    return wait(session)
-  },
-  session: () => read(AUTH_STORAGE_KEY, null),
+  session: readSession,
   logout: () => window.localStorage.removeItem(AUTH_STORAGE_KEY),
-}
-
-function customerSession(client) {
-  return {
-    id: client.id,
-    name: client.name,
-    identification: client.identification,
-    email: client.email,
-    username: client.username || '',
-    phone: client.phone,
-    address: client.address || '',
-    emergencyContact: client.emergencyContact || '',
-    role: 'client',
-  }
 }

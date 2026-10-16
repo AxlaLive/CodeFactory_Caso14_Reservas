@@ -35,11 +35,32 @@ public class CitaController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
         }
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> actualizarCita(@PathVariable Long id,
+                                            @Valid @RequestBody CitaRequest request) {
+        try {
+            return citaService.actualizarDesdeAgenda(id, request)
+                    .<ResponseEntity<?>>map(ResponseEntity::ok)
+                    .orElseGet(() -> ResponseEntity.notFound().build());
+        } catch (ValidationException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (BusinessConflictException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+        }
+    }
     @GetMapping("/rango")
     public ResponseEntity<List<Cita>> consultarAgendaPorRango(
             @RequestParam("inicio") LocalDate inicio,
             @RequestParam("fin") LocalDate fin) {
         List<Cita> citas = citaService.consultarPorRangoFechas(inicio, fin);
         return ResponseEntity.ok(citas);
+    }
+
+    @PatchMapping("/{id}/cancelar")
+    public ResponseEntity<Cita> cancelar(@PathVariable Long id) {
+        return citaService.cancelar(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

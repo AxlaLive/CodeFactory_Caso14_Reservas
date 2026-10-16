@@ -46,6 +46,18 @@ Set the production database and JWT environment variables listed above on the
 Render Web Service. Do not put database credentials in Docker build arguments,
 the Dockerfile, or the image.
 
+For a separately deployed Vite frontend, set `CORS_ALLOWED_ORIGIN_PATTERNS` on
+the backend to the exact frontend origin (for example,
+`https://your-frontend.onrender.com`). Set `VITE_API_BASE_URL` on the frontend
+to the backend URL followed by `/api`; this value is embedded at frontend build
+time.
+
+Create the frontend as a **Static Site** in Render, using the repository root,
+`npm ci && npm run build` as the build command, and `dist` as the publish
+directory. Set `VITE_API_BASE_URL` to the backend's public URL followed by
+`/api`, then copy the frontend's public origin into the backend's
+`CORS_ALLOWED_ORIGIN_PATTERNS` setting and redeploy the backend.
+
 Flyway applies pending migrations at startup. Add future schema changes as new
 `V<number>__description.sql` files; do not edit a migration that has already
 been applied to a shared database.
