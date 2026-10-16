@@ -6,6 +6,8 @@ import com.codefactory.reservas.Security.JwtService;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,19 +26,25 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
 
-        authenticationManager.authenticate(
+        Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getUsername(),
                         request.getPassword()
                 )
         );
 
-        String token = jwtService.generateToken(request.getUsername());
+        String username = authentication.getName();
+        String token = jwtService.generateToken(username);
+        String authority = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .findFirst()
+                .orElse("ROLE_PROFESSIONAL");
+        String role = authority.replaceFirst("^ROLE_", "").toLowerCase();
 
         return new AuthResponse(
                 token,
-                request.getUsername(),
-                "ROLE_ADMIN"
+                username,
+                role
         );
     }
 }

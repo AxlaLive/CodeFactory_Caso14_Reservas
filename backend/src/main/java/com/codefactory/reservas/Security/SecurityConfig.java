@@ -1,5 +1,7 @@
 package com.codefactory.reservas.Security;
 
+import com.codefactory.reservas.repository.ProfesionalRepository;
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -11,7 +13,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -19,6 +20,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 @Configuration
 public class SecurityConfig {
@@ -29,15 +31,29 @@ public class SecurityConfig {
     }
 
     @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
-
+        public UserDetailsService userDetailsService(
+            PasswordEncoder passwordEncoder,
+            ProfesionalRepository profesionalRepository
+        ) {
         UserDetails admin = User.builder()
-                .username("admin")
-                .password(passwordEncoder.encode("dentia123"))
-                .roles("ADMIN")
-                .build();
+            .username("admin")
+            .password(passwordEncoder.encode("dentia123"))
+            .roles("ADMIN")
+            .build();
 
-        return new InMemoryUserDetailsManager(admin);
+        return username -> {
+            if ("admin".equalsIgnoreCase(username)) {
+            return admin;
+            }
+            return profesionalRepository.findByUsuarioIgnoreCaseOrCorreoIgnoreCase(username, username)
+                .filter(profesional -> Boolean.TRUE.equals(profesional.getActivo()))
+                .filter(profesional -> profesional.getPasswordHash() != null)
+                .map(profesional -> User.withUsername(profesional.getUsuario())
+                    .password(profesional.getPasswordHash())
+                    .roles(profesional.getRol())
+                    .build())
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado."));
+        };
     }
 
     @Bean
@@ -62,6 +78,8 @@ public SecurityFilterChain securityFilterChain(
 
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/v1/trabajadores/**").permitAll()
+                    .requestMatchers("/api/v1/trabajadores/**").hasRole("ADMIN")
                     .requestMatchers("/h2-console/**").permitAll()
                     .anyRequest().authenticated()
             )
