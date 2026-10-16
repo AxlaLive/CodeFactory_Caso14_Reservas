@@ -333,6 +333,23 @@ export const authService = {
     return wait(session)
   },
   session: () => read(AUTH_STORAGE_KEY, null),
+  isTokenExpired: () => {
+    const session = read(AUTH_STORAGE_KEY, null)
+    if (!session?.token) return false
+    const payload = session.token.split('.')[1]
+    if (!payload) throw new Error('La sesión no contiene un token válido.')
+
+    try {
+      const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/')
+        .padEnd(Math.ceil(payload.length / 4) * 4, '=')
+      const claims = JSON.parse(window.atob(normalizedPayload))
+      if (!Number.isFinite(claims.exp)) throw new Error('El token no contiene una fecha de expiración válida.')
+      return Date.now() >= claims.exp * 1000
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('expiración')) throw error
+      throw new Error('No se pudo validar la expiración de la sesión.')
+    }
+  },
   logout: () => window.localStorage.removeItem(AUTH_STORAGE_KEY),
 }
 

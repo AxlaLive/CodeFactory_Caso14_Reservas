@@ -1,0 +1,112 @@
+.medical-record { color: #304943; }
+.medical-back { display: inline-flex; align-items: center; gap: 7px; padding: 8px 0; margin: 0 0 16px; color: #4a896c; background: transparent; font-size: 11px; font-weight: 700; }
+.medical-patient-header { display: flex; align-items: center; gap: 20px; padding: 22px 25px; border: 1px solid #e2ebe5; border-radius: 9px; background: #fff; }
+.medical-avatar { display: grid; flex: 0 0 56px; place-items: center; width: 56px; height: 56px; border-radius: 50%; color: #33775c; background: #e0f1e7; font-size: 16px; font-weight: 700; }
+.medical-patient-info { min-width: 0; flex: 1; }
+.medical-patient-info .eyebrow { margin-bottom: 5px; }
+.medical-patient-info h2 { margin: 0; color: #263d3d; font-family: Manrope, sans-serif; font-size: 22px; }
+.medical-demographics { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 9px; color: #82918b; font-size: 10px; }
+.medical-appointment-chip { display: flex; flex-direction: column; gap: 5px; padding: 12px 15px; border-radius: 7px; color: #668075; background: #f2f8f4; font-size: 9px; }
+.medical-appointment-chip strong { color: #3c6654; font-size: 11px; }
+.medical-appointment-chip small { font-size: 9px; }
+.medical-allergy-alert { display: flex; align-items: center; gap: 12px; padding: 13px 17px; margin-top: 13px; border: 1px solid #f0c9bd; border-left: 4px solid #d66f51; border-radius: 7px; color: #8f4637; background: #fff5f1; }
+.allergy-icon { display: grid; flex: 0 0 26px; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: #fff; background: #ce6247; font-size: 16px; font-weight: 700; }
+.medical-allergy-alert strong { font-size: 11px; }
+.medical-allergy-alert p { margin: 3px 0 0; font-size: 11px; }
+.medical-tabs { display: flex; gap: 4px; padding: 17px 0 0; margin-top: 8px; border-bottom: 1px solid #dfe9e2; }
+.medical-tabs button { display: inline-flex; align-items: center; gap: 7px; padding: 11px 15px; margin-bottom: -1px; border-bottom: 2px solid transparent; color: #768980; background: transparent; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.medical-tabs button.active { border-bottom-color: #3e936d; color: #317956; }
+.medical-tabs button span { display: grid; min-width: 17px; height: 17px; padding: 0 4px; place-items: center; border-radius: 10px; color: #4d8769; background: #e9f4ec; font-size: 9px; }
+.medical-section-scroll { max-height: calc(100vh - 342px); min-height: 380px; overflow: auto; padding: 19px 2px 24px; scrollbar-color: #b9cec0 #f3f7f4; scrollbar-width: thin; }
+.medical-panel { min-height: 315px; padding: 22px 24px; border: 1px solid #e2ebe5; border-radius: 9px; background: #fff; }
+.medical-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding-bottom: 17px; border-bottom: 1px solid #edf2ee; }
+.medical-section-heading h2 { margin: 0; color: #304943; font-family: Manrope, sans-serif; font-size: 17px; }
+.medical-section-heading p { margin: 5px 0 0; color: #899991; font-size: 10px; }
+.medical-section-heading .eyebrow { margin-bottom: 5px; }
+.medical-section-heading .primary-button { flex: 0 0 auto; }
+.medical-loading { display: flex; min-height: 240px; align-items: center; justify-content: center; gap: 12px; color: #72877d; font-size: 12px; }
+.medical-spinner { width: 25px; height: 25px; border: 3px solid #dcebe1; border-top-color: #398f69; border-radius: 50%; animation: medical-spin .75s linear infinite; }
+@keyframes medical-spin { to { transform: rotate(360deg); } }
+.medical-error { padding: 10px 13px; margin: 10px 0; border: 1px solid #edc9c1; border-radius: 6px; color: #9b4d40; background: #fff6f3; font-size: 11px; }
+.medical-error button { margin-left: 8px; color: #8f473c; background: transparent; font-weight: 700; }
+.medical-retention { margin: 10px 4px 0; color: #91a098; font-size: 9px; text-align: right; }
+.medical-empty { display: flex; min-height: 145px; flex-direction: column; align-items: center; justify-content: center; color: #8ba097; text-align: center; }
+.medical-empty span { color: #a8c8b4; font-size: 27px; }
+.medical-empty p { margin: 7px 0 0; font-size: 11px; }
+.odontogram-legend { display: flex; flex-wrap: wrap; gap: 11px 18px; padding: 15px 0; color: #75877e; font-size: 9px; }
+.odontogram-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.tooth-mark { display: inline-block; width: 10px; height: 10px; border: 1px solid #aabbb0; border-radius: 50%; }
+.mark-caries, .mark-crownNeeded, .mark-endodonticsNeeded { border-color: #d64c48; background: #e45f58; }
+.mark-restoration, .mark-absent, .mark-crown, .mark-endodontics, .mark-sealant, .mark-implant { border-color: #3476c5; background: #4d8bd1; }
+.odontogram-scroll { overflow-x: auto; padding: 5px 0 15px; }
+.odontogram-arch { min-width: 900px; padding: 15px 18px; border: 1px solid #edf2ee; border-radius: 8px; background: #fbfdfb; }
+.arch-label { display: block; color: #789084; font-size: 9px; font-weight: 700; letter-spacing: .09em; text-align: center; }
+.teeth-row { display: flex; justify-content: center; gap: 2px; padding: 11px 0 2px; }
+.teeth-row.lower { padding: 2px 0 11px; }
+.tooth { position: relative; display: flex; width: 43px; height: 67px; flex: 0 0 43px; flex-direction: column; align-items: center; justify-content: flex-start; padding: 0; border: 1px solid transparent; border-radius: 5px; color: #86978e; background: transparent; }
+.tooth:hover, .tooth.selected { border-color: #90c3a2; background: #edf7f0; }
+.tooth svg { width: 35px; height: 47px; overflow: visible; }
+.tooth-shape { fill: #fff; stroke: #8da79a; stroke-width: 1.5; }
+.tooth-face { fill: transparent; stroke: #a7b8ad; stroke-width: 1; }
+.tooth-caries .tooth-face { fill: #e95750; stroke: #d5433c; }
+.tooth-restoration .tooth-face { fill: #4989cf; stroke: #3172b8; }
+.face-M .tooth-face { transform: translate(-3px, 0); }
+.face-D .tooth-face { transform: translate(3px, 0); }
+.face-V .tooth-face { transform: translate(0, 3px); }
+.face-L .tooth-face { transform: translate(0, -3px); }
+.tooth > span { position: absolute; bottom: 1px; font-size: 8px; }
+.tooth-x { position: absolute; top: 2px; color: #3476c5; font-size: 41px; font-style: normal; font-weight: 500; line-height: 42px; }
+.tooth-crown { position: absolute; top: 7px; width: 24px; height: 20px; border: 2px solid #3476c5; border-radius: 50%; }
+.tooth-crown.needed { border-color: #d64c48; }
+.tooth-root { position: absolute; top: 22px; width: 2px; height: 25px; background: #3476c5; }
+.tooth-root.needed { background: #d64c48; }
+.tooth-sealant { position: absolute; top: 11px; color: #3476c5; font-size: 13px; font-style: normal; font-weight: 800; }
+.tooth-implant { position: absolute; top: 8px; color: #3476c5; font-size: 24px; font-style: normal; font-weight: 800; transform: rotate(90deg); }
+.arch-divider { display: flex; align-items: center; justify-content: space-between; padding: 5px 25%; border-top: 1px dashed #dbe6de; border-bottom: 1px dashed #dbe6de; color: #a0aea6; font-size: 8px; }
+.arch-divider b { color: #82948a; font-weight: 500; }
+.tooth-detail { display: flex; align-items: center; gap: 14px; padding: 11px 13px; margin: 2px 0 17px; border-radius: 6px; background: #f2f8f4; }
+.tooth-detail > div:first-child { display: flex; min-width: 180px; flex-direction: column; gap: 3px; }
+.tooth-detail strong { color: #426454; font-size: 10px; }
+.tooth-detail span { color: #81938a; font-size: 9px; }
+.region-buttons { display: flex; gap: 4px; }
+.region-buttons button { width: 25px; height: 25px; border: 1px solid #d6e3da; border-radius: 5px; color: #6b8176; background: #fff; font-size: 9px; }
+.region-buttons button.active { border-color: #66a780; color: #317956; background: #e3f2e8; }
+.medical-text-button { color: #438968; background: transparent; font-size: 9px; font-weight: 700; }
+.medical-record-list { margin-top: 20px; }
+.medical-record-list h3 { margin: 0 0 8px; color: #4a6358; font-size: 11px; }
+.medical-record-item { display: grid; grid-template-columns: 125px minmax(0, 1fr) auto; align-items: start; gap: 14px; padding: 13px 4px; border-top: 1px solid #edf2ee; }
+.record-date { padding-top: 2px; color: #82958a; font-size: 9px; }
+.record-description strong, .medical-record-item > div > strong { color: #466254; font-size: 10px; }
+.record-description p, .medical-record-item > div > p { margin: 4px 0 0; color: #798980; font-size: 10px; line-height: 1.55; }
+.record-actions { display: flex; gap: 10px; }
+.record-actions button { padding: 3px; color: #48896b; background: transparent; font-size: 9px; }
+.record-actions button:last-child { color: #b36c62; }
+.medical-image-form { display: grid; grid-template-columns: 1.3fr 1fr auto; align-items: end; gap: 12px; padding: 17px 0; border-bottom: 1px solid #edf2ee; }
+.medical-image-form label, .medical-editor label { display: flex; flex-direction: column; gap: 6px; color: #667b70; font-size: 10px; font-weight: 600; }
+.medical-image-form input:not([type=file]), .medical-editor input, .medical-editor select, .medical-editor textarea { width: 100%; min-height: 36px; padding: 8px 10px; border: 1px solid #dce7df; border-radius: 5px; outline: none; color: #40584d; background: #fff; font-size: 11px; }
+.medical-image-form input[type=file] { width: 100%; min-height: 36px; color: #71837a; font-size: 9px; }
+.medical-image-form input:focus, .medical-editor input:focus, .medical-editor select:focus, .medical-editor textarea:focus { border-color: #76b18b; box-shadow: 0 0 0 2px #e4f3e9; }
+.medical-image-grid { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 14px; padding-top: 17px; }
+.medical-image-grid article { overflow: hidden; border: 1px solid #e4ece6; border-radius: 7px; background: #fff; }
+.medical-image-thumb { display: block; width: 100%; height: 145px; padding: 0; background: #f2f6f3; }
+.medical-image-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.medical-image-error { display: grid; width: 100%; height: 100%; place-items: center; padding: 12px; color: #9b4d40; background: #fff6f3; font-size: 10px; }
+.medical-image-grid article > div { display: flex; flex-direction: column; gap: 5px; padding: 10px; }
+.medical-image-grid strong { overflow: hidden; color: #4e665b; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.medical-image-grid span, .medical-image-grid small { color: #87978e; font-size: 9px; }
+.medical-image-grid small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.medical-editor-layer, .medical-image-viewer { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 25px; background: rgba(22, 43, 39, .48); }
+.medical-editor { display: flex; width: min(520px, 94vw); max-height: 90vh; flex-direction: column; gap: 14px; overflow: auto; padding: 22px; border-radius: 9px; background: #fff; box-shadow: 0 18px 55px rgba(25, 48, 41, .2); }
+.medical-editor > header, .medical-image-viewer header { display: flex; align-items: flex-start; justify-content: space-between; padding-bottom: 13px; border-bottom: 1px solid #e9efeb; }
+.medical-editor h2 { margin: 0; color: #334c42; font-family: Manrope, sans-serif; font-size: 18px; }
+.medical-editor > header > button, .medical-image-viewer header button { width: 30px; height: 30px; border-radius: 5px; color: #71847a; background: #f2f6f3; font-size: 19px; }
+.medical-editor textarea { resize: vertical; }
+.medical-editor footer { display: flex; justify-content: flex-end; gap: 8px; padding-top: 6px; }
+.medical-editor .secondary-button { min-height: 36px; padding: 0 12px; border: 1px solid #dfe9e2; border-radius: 5px; color: #6a8075; background: #fff; font-size: 10px; }
+.medical-image-viewer section { display: flex; max-width: 90vw; max-height: 90vh; flex-direction: column; overflow: hidden; padding: 16px; border-radius: 9px; background: #fff; }
+.medical-image-viewer header { align-items: center; gap: 30px; }
+.medical-image-viewer header div { display: flex; flex-direction: column; gap: 4px; }
+.medical-image-viewer header strong { color: #40584c; font-size: 12px; }
+.medical-image-viewer header span { color: #84948b; font-size: 10px; }
+.medical-image-viewer img { display: block; max-width: 85vw; max-height: calc(90vh - 70px); margin-top: 14px; object-fit: contain; }
+@media (max-height: 800px) { .medical-section-scroll { max-height: calc(100vh - 300px); min-height: 300px; } }

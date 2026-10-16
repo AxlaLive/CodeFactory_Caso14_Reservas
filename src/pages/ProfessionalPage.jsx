@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import AgendaWeekly from "../components/AgendaWeekly";
 import AppointmentDetail from "../components/AppointmentDetail";
 import BlockForm from "../components/BlockForm";
+import MedicalRecordPage from "../components/MedicalRecordPage";
 import { appointmentService, blockService } from "../api/clinicService";
 import { getWeekDays, toDateKey } from "../utils/agenda";
 
@@ -15,6 +16,7 @@ export default function ProfessionalPage({
   const [appointments, setAppointments] = useState([]);
   const [blocks, setBlocks] = useState([]);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [medicalAppointment, setMedicalAppointment] = useState(null);
   const [blockFormOpen, setBlockFormOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const weekDays = useMemo(() => getWeekDays(weekDate), [weekDate]);
@@ -105,7 +107,11 @@ export default function ProfessionalPage({
               Clinica Sonrisa · {session.specialty || "Profesional"}
             </span>
             <h1>
-              {view === "personal" ? "Mi agenda personal" : "Agenda general"}
+              {medicalAppointment
+                ? `Expediente de ${medicalAppointment.patientName}`
+                : view === "personal"
+                  ? "Mi agenda personal"
+                  : "Agenda general"}
             </h1>
           </div>
           <div className="header-profile">
@@ -123,7 +129,14 @@ export default function ProfessionalPage({
         </header>
 
         <div className="admin-content">
-          {view === "personal" ? (
+          {medicalAppointment ? (
+            <MedicalRecordPage
+              appointment={medicalAppointment}
+              session={session}
+              onBack={() => setMedicalAppointment(null)}
+              onLogout={onLogout}
+            />
+          ) : view === "personal" ? (
             <>
               <section className="agenda-intro">
                 <div>
@@ -258,6 +271,15 @@ export default function ProfessionalPage({
         <AppointmentDetail
           appointment={selectedAppointment}
           readOnly
+          canManageMedical={
+            session.role === "professional" &&
+            view === "personal" &&
+            selectedAppointment.professionalId === professionalId
+          }
+          onManageMedical={(appointment) => {
+            setSelectedAppointment(null);
+            setMedicalAppointment(appointment);
+          }}
           onClose={() => setSelectedAppointment(null)}
           onEdit={() => {}}
           onReschedule={() => {}}
