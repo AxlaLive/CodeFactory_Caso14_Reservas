@@ -13,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/trabajadores")
-@CrossOrigin(origins = "*")
 public class TrabajadorController {
 
     private final TrabajadorService trabajadorService;

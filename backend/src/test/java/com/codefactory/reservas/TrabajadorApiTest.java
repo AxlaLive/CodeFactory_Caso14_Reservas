@@ -14,7 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
 
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.hasItems;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -75,14 +75,17 @@ class TrabajadorApiTest {
         org.assertj.core.api.Assertions.assertThat(receptionist.getPasswordHash()).isNotEqualTo(receptionistPassword);
         org.assertj.core.api.Assertions.assertThat(passwordEncoder.matches(receptionistPassword, receptionist.getPasswordHash())).isTrue();
 
-        mockMvc.perform(post("/api/auth/login")
+        String loginByUsername = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"username":"%s","password":"%s"}
                                 """.formatted(receptionistUsername, receptionistPassword)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.role").value("receptionist"))
-                .andExpect(jsonPath("$.token").isNotEmpty());
+                .andExpect(jsonPath("$.token").isNotEmpty())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
 
         String professionalRequest = """
                 {
@@ -104,8 +107,39 @@ class TrabajadorApiTest {
                 .andExpect(jsonPath("$.roleType").value("professional"))
                 .andExpect(jsonPath("$.specialty").value("Ortodoncista"));
 
-        mockMvc.perform(get("/api/v1/trabajadores"))
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"prof%s","password":"secure123"}
+                                """.formatted(suffix)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)));
+                .andExpect(jsonPath("$.role").value("professional"));
+
+        String receptionistToken = objectMapper.readTree(loginByUsername)
+                .get("token")
+                .asText();
+
+        mockMvc.perform(get("/api/v1/trabajadores"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/v1/trabajadores")
+                        .header("Authorization", "Bearer " + receptionistToken))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"maria%s@example.com","password":"%s"}
+                                """.formatted(suffix, receptionistPassword)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.role").value("receptionist"));
+
+        mockMvc.perform(get("/api/v1/trabajadores")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].username", hasItems(
+                        receptionistUsername,
+                        "prof" + suffix
+                )));
     }
 }

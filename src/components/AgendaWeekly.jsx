@@ -13,5 +13,13 @@ function AppointmentBlock({ entry, readOnly, onSelect }) {
 
 function BlockBlock({ entry }) {
   const { data } = entry
-  return <div className={data.type === 'break' ? 'slot-block break' : 'slot-block admin'}><strong>{data.type === 'break' ? '⏸' : '🗒'} {data.label || (data.type === 'break' ? 'Descanso' : 'Tarea administrativa')}</strong><span>{data.startTime} - {data.endTime}</span></div>
+  const label = data.label || ({
+    available: 'Horario disponible',
+    unavailable: 'No disponible',
+    break: 'Descanso',
+    admin: 'No disponible',
+    other: 'Otro motivo',
+  }[data.type] || 'Disponibilidad')
+  const className = data.type === 'break' ? 'break' : data.type === 'available' ? 'available' : 'admin'
+  return <div className={`slot-block ${className}`}><strong>{data.type === 'break' ? '⏸' : data.type === 'available' ? '✓' : '🗒'} {label}</strong><span>{data.startTime} - {data.endTime}</span></div>
 }

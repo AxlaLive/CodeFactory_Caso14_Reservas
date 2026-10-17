@@ -33,6 +33,7 @@ public class Profesional {
     private String correo;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean activo = true;
 
     @Builder.Default

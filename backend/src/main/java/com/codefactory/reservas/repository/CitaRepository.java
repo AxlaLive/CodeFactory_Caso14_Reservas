@@ -28,11 +28,32 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
                                           @Param("horaFin") LocalTime horaFin);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM Cita c WHERE c.fecha = :fecha AND c.profesional.id = :profesionalId " +
+            "AND c.id <> :citaId AND c.estado <> 'CANCELADA' " +
+            "AND c.horaInicio < :horaFin AND c.horaFin > :horaInicio")
+    List<Cita> findConflictsByProfesionalExcludingCita(@Param("fecha") LocalDate fecha,
+                                                        @Param("profesionalId") Long profesionalId,
+                                                        @Param("horaInicio") LocalTime horaInicio,
+                                                        @Param("horaFin") LocalTime horaFin,
+                                                        @Param("citaId") Long citaId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT c FROM Cita c WHERE c.fecha = :fecha AND c.espacioFisico.id = :espacioId AND c.estado <> 'CANCELADA' " +
             "AND c.horaInicio < :horaFin AND c.horaFin > :horaInicio")
     List<Cita> findConflictsByEspacio(@Param("fecha") LocalDate fecha,
                                       @Param("espacioId") Long espacioId,
                                       @Param("horaInicio") LocalTime horaInicio,
                                       @Param("horaFin") LocalTime horaFin);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM Cita c WHERE c.fecha = :fecha AND c.espacioFisico.id = :espacioId " +
+            "AND c.id <> :citaId AND c.estado <> 'CANCELADA' " +
+            "AND c.horaInicio < :horaFin AND c.horaFin > :horaInicio")
+    List<Cita> findConflictsByEspacioExcludingCita(@Param("fecha") LocalDate fecha,
+                                                    @Param("espacioId") Long espacioId,
+                                                    @Param("horaInicio") LocalTime horaInicio,
+                                                    @Param("horaFin") LocalTime horaFin,
+                                                    @Param("citaId") Long citaId);
+
     List<Cita> findByFechaBetween(LocalDate fechaInicio, LocalDate fechaFin);
 }
