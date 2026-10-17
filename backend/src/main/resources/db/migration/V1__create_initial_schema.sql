@@ -5,6 +5,7 @@ CREATE TABLE profesionales (
     documento VARCHAR(20) NOT NULL UNIQUE,
     especialidad VARCHAR(100) NOT NULL,
     correo VARCHAR(100) NOT NULL,
+    password VARCHAR(255) NOT NULL, -- Nuevo campo para el login
     activo BOOLEAN NOT NULL
 );
 

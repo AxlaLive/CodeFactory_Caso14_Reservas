@@ -6,6 +6,8 @@ import com.codefactory.reservas.Security.JwtService;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,19 +26,28 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
 
-        authenticationManager.authenticate(
+        // 1. Autenticar credenciales
+        Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getUsername(),
                         request.getPassword()
                 )
         );
 
-        String token = jwtService.generateToken(request.getUsername());
+        // 2. Extraer el rol dinámicamente desde el objeto devuelto por Spring Security
+        String role = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .findFirst()
+                .orElse("ROLE_USER");
 
+        // 3. Generar token pasando el usuario y su rol real
+        String token = jwtService.generateToken(request.getUsername(), role);
+
+        // 4. Retornar la respuesta con el rol dinámico
         return new AuthResponse(
                 token,
                 request.getUsername(),
-                "ROLE_ADMIN"
+                role
         );
     }
 }
