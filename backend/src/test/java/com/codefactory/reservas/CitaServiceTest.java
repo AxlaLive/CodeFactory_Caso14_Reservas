@@ -1,13 +1,14 @@
 package com.codefactory.reservas;
 
-import com.codefactory.reservas.domain.Cita;
 import com.codefactory.reservas.domain.EspacioFisico;
+import com.codefactory.reservas.domain.Cita;
 import com.codefactory.reservas.domain.Paciente;
 import com.codefactory.reservas.domain.Profesional;
 import com.codefactory.reservas.domain.Servicio;
 import com.codefactory.reservas.domain.Disponibilidad;
 import com.codefactory.reservas.domain.TipoDisponibilidad;
 import com.codefactory.reservas.dto.CitaRequest;
+import com.codefactory.reservas.dto.CitaResponse;
 import com.codefactory.reservas.exception.BusinessConflictException;
 import com.codefactory.reservas.repository.CitaRepository;
 import com.codefactory.reservas.repository.DisponibilidadRepository;
@@ -85,10 +86,10 @@ class CitaServiceTest {
                 "Consulta inicial"
         );
 
-        Cita saved = citaService.crearDesdeAgenda(request);
+        CitaResponse saved = citaService.crearDesdeAgenda(request);
 
-        assertThat(saved.getId()).isNotNull();
-        assertThat(saved.getHoraFin()).isEqualTo(LocalTime.of(9, 30));
+        assertThat(saved.id()).isNotNull();
+        assertThat(saved.horaFin()).isEqualTo(LocalTime.of(9, 30));
         assertThat(citaRepository.count()).isEqualTo(1);
     }
 
@@ -217,7 +218,7 @@ class CitaServiceTest {
 
     @Test
     void shouldUpdateAndCancelAnAppointment() {
-        Cita saved = citaService.crearDesdeAgenda(new CitaRequest(
+        CitaResponse saved = citaService.crearDesdeAgenda(new CitaRequest(
                 LocalDate.of(2026, 9, 20),
                 LocalTime.of(9, 0),
                 profesional.getId(),
@@ -227,7 +228,7 @@ class CitaServiceTest {
                 "Consulta inicial"
         ));
 
-        Cita updated = citaService.actualizarDesdeAgenda(saved.getId(), new CitaRequest(
+        CitaResponse updated = citaService.actualizarDesdeAgenda(saved.id(), new CitaRequest(
                 LocalDate.of(2026, 9, 21),
                 LocalTime.of(10, 0),
                 profesional.getId(),
@@ -237,11 +238,11 @@ class CitaServiceTest {
                 "Consulta reprogramada"
         )).orElseThrow();
 
-        assertThat(updated.getId()).isEqualTo(saved.getId());
-        assertThat(updated.getFecha()).isEqualTo(LocalDate.of(2026, 9, 21));
-        assertThat(updated.getHoraInicio()).isEqualTo(LocalTime.of(10, 0));
+        assertThat(updated.id()).isEqualTo(saved.id());
+        assertThat(updated.fecha()).isEqualTo(LocalDate.of(2026, 9, 21));
+        assertThat(updated.horaInicio()).isEqualTo(LocalTime.of(10, 0));
 
-        Cita cancelled = citaService.cancelar(saved.getId()).orElseThrow();
-        assertThat(cancelled.getEstado()).isEqualTo("CANCELADA");
+        CitaResponse cancelled = citaService.cancelar(saved.id()).orElseThrow();
+        assertThat(cancelled.estado()).isEqualTo("CANCELADA");
     }
 }
