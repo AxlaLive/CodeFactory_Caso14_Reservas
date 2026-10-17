@@ -8,6 +8,7 @@ import com.codefactory.reservas.domain.Servicio;
 import com.codefactory.reservas.domain.Disponibilidad;
 import com.codefactory.reservas.domain.TipoDisponibilidad;
 import com.codefactory.reservas.dto.CitaRequest;
+import com.codefactory.reservas.dto.CitaResponse;
 import com.codefactory.reservas.exception.BusinessConflictException;
 import com.codefactory.reservas.exception.ValidationException;
 import com.codefactory.reservas.repository.CitaRepository;
@@ -49,15 +50,15 @@ public class CitaService {
     }
 
     @Transactional
-    public Cita crearDesdeAgenda(CitaRequest request) {
-        return guardarDesdeAgenda(request, null);
+    public CitaResponse crearDesdeAgenda(CitaRequest request) {
+        return CitaResponse.from(guardarDesdeAgenda(request, null));
     }
 
     @Transactional
-    public Optional<Cita> actualizarDesdeAgenda(Long citaId, CitaRequest request) {
+    public Optional<CitaResponse> actualizarDesdeAgenda(Long citaId, CitaRequest request) {
         return citaRepository.findById(citaId)
                 .filter(cita -> !"CANCELADA".equals(cita.getEstado()))
-                .map(cita -> guardarDesdeAgenda(request, cita));
+                .map(cita -> CitaResponse.from(guardarDesdeAgenda(request, cita)));
     }
 
     private Cita guardarDesdeAgenda(CitaRequest request, Cita citaExistente) {
@@ -152,15 +153,18 @@ public class CitaService {
             throw new ValidationException("El motivo es obligatorio.");
         }
     }
-    public List<Cita> consultarPorRangoFechas(LocalDate inicio, LocalDate fin) {
-        return citaRepository.findByFechaBetween(inicio, fin);
+    @Transactional
+    public List<CitaResponse> consultarPorRangoFechas(LocalDate inicio, LocalDate fin) {
+        return citaRepository.findByFechaBetween(inicio, fin).stream()
+                .map(CitaResponse::from)
+                .toList();
     }
 
     @Transactional
-    public Optional<Cita> cancelar(Long id) {
+    public Optional<CitaResponse> cancelar(Long id) {
         return citaRepository.findById(id).map(cita -> {
             cita.setEstado("CANCELADA");
-            return citaRepository.save(cita);
+            return CitaResponse.from(citaRepository.save(cita));
         });
     }
 }
