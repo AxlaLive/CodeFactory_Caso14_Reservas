@@ -24,19 +24,19 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
 
-        authenticationManager.authenticate(
+        var authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getUsername(),
                         request.getPassword()
                 )
         );
 
-        String token = jwtService.generateToken(request.getUsername());
+        String token = jwtService.generateToken(authentication.getName());
 
         return new AuthResponse(
                 token,
-                request.getUsername(),
-                "ROLE_ADMIN"
+                authentication.getName(),
+                authentication.getAuthorities().iterator().next().getAuthority()
         );
     }
 }

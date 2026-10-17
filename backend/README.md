@@ -1,5 +1,38 @@
 # Reservas backend
 
+## HU-1.3 / Task 55: registro de clientes
+
+`POST /api/auth/register` es público y recibe JSON:
+
+```json
+{
+  "nombre": "Ana Pérez",
+  "documento": "1020304050",
+  "correo": "ana@example.com",
+  "telefono": "3001234567",
+  "password": "MiClave123"
+}
+```
+
+Todos los campos son obligatorios. La contraseña requiere 8 a 72 caracteres
+y un máximo de 72 bytes UTF-8 por BCrypt. El correo debe tener formato válido.
+El correo se guarda en minúsculas y no se permiten cuentas con correo o
+documento repetidos. Un documento de paciente existente requiere atención del
+consultorio; el registro público no vincula cuentas a pacientes existentes.
+
+Respuestas: `201` con `token`, `username` (correo) y `role: ROLE_CLIENTE`;
+`400` con `VALIDATION_ERROR` para campos inválidos; `409` con `CONFLICT`
+para duplicados. El paciente y su cuenta se guardan en una sola transacción.
+La contraseña se guarda como hash BCrypt y nunca se devuelve en la respuesta.
+
+El frontend debe guardar el token y redirigir al portal tras recibir `201`.
+Puede consultar `GET /api/servicios` usando `Authorization: Bearer <token>`.
+Las demás operaciones requieren rol ADMIN. Para volver a iniciar sesión,
+usar `POST /api/auth/login` con `username` igual al correo y `password`.
+La migración V3 agrega `clientes` sin modificar las migraciones existentes.
+Las pruebas automatizadas de API están en `RegistroClienteApiTest`;
+la validación del formulario y de la redirección corresponde a la task 57.
+
 ## Local development
 
 The default profile uses an in-memory H2 database. Flyway creates its schema

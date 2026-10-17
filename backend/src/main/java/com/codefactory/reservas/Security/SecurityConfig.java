@@ -31,7 +31,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
+    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder, com.codefactory.reservas.repository.ClienteRepository clientes) {
 
         UserDetails admin = User.builder()
                 .username("admin")
@@ -39,7 +39,13 @@ public class SecurityConfig {
                 .roles("ADMIN")
                 .build();
 
-        return new InMemoryUserDetailsManager(admin);
+        return username -> {
+            if ("admin".equals(username)) return admin;
+            var cliente = clientes.findByCorreo(username.strip().toLowerCase(java.util.Locale.ROOT))
+                    .orElseThrow(() -> new org.springframework.security.core.userdetails.UsernameNotFoundException("Usuario no encontrado"));
+            return User.withUsername(cliente.getCorreo()).password(cliente.getPasswordHash())
+                    .roles("CLIENTE").disabled(!cliente.getPaciente().isActivo()).build();
+        };
     }
 
     @Bean
@@ -65,7 +71,8 @@ public SecurityFilterChain securityFilterChain(
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers("/h2-console/**").permitAll()
-                    .anyRequest().authenticated()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/servicios", "/api/servicios/**").hasAnyRole("ADMIN", "CLIENTE")
+                    .anyRequest().hasRole("ADMIN")
             )
 
             .headers(headers ->
