@@ -41,7 +41,7 @@ public class JwtService {
     }
 
     public String generateToken(String username) {
-        return generateToken(username, "ROLE_USER");
+    return generateToken(username, "ROLE_CLIENTE");
     }
 
     public String extractUsername(String token) {

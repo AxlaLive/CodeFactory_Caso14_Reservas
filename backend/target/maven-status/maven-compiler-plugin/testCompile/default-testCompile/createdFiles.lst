@@ -1,3 +1,5 @@
 com\codefactory\reservas\SecurityIntegrationTest.class
-com\codefactory\reservas\CitaServiceTest.class
 com\codefactory\reservas\DisponibilidadApiTest.class
+com\codefactory\reservas\RegistroClienteApiTest.class
+com\codefactory\reservas\CitaServiceTest.class
+com\codefactory\reservas\RegistroClienteValidacionesTest.class
