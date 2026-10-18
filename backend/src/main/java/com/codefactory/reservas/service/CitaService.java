@@ -158,7 +158,7 @@ public class CitaService {
 
     @Transactional
     public Optional<Cita> cancelar(Long id) {
-        return citaRepository.findById(id).map(cita -> {
+        return citaRepository.findWithRelationsById(id).map(cita -> {
             cita.setEstado("CANCELADA");
             return citaRepository.save(cita);
         });
