@@ -3,6 +3,7 @@ package com.codefactory.reservas.repository;
 import com.codefactory.reservas.domain.Cita;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface CitaRepository extends JpaRepository<Cita, Long> {
 
@@ -55,5 +57,9 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
                                                     @Param("horaFin") LocalTime horaFin,
                                                     @Param("citaId") Long citaId);
 
+    @EntityGraph(attributePaths = {"profesional", "espacioFisico", "paciente", "servicio"})
     List<Cita> findByFechaBetween(LocalDate fechaInicio, LocalDate fechaFin);
+
+    @EntityGraph(attributePaths = {"profesional", "espacioFisico", "paciente", "servicio"})
+    Optional<Cita> findWithRelationsById(Long id);
 }

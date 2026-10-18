@@ -1,8 +1,14 @@
 package com.codefactory.reservas;
 
 import com.codefactory.reservas.Security.JwtService;
+import com.codefactory.reservas.domain.EspacioFisico;
+import com.codefactory.reservas.domain.Paciente;
 import com.codefactory.reservas.domain.Profesional;
+import com.codefactory.reservas.domain.Servicio;
+import com.codefactory.reservas.repository.EspacioFisicoRepository;
+import com.codefactory.reservas.repository.PacienteRepository;
 import com.codefactory.reservas.repository.ProfesionalRepository;
+import com.codefactory.reservas.repository.ServicioRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,6 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -30,6 +37,15 @@ class DisponibilidadApiTest {
 
     @Autowired
     private ProfesionalRepository profesionalRepository;
+
+    @Autowired
+    private EspacioFisicoRepository espacioFisicoRepository;
+
+    @Autowired
+    private PacienteRepository pacienteRepository;
+
+    @Autowired
+    private ServicioRepository servicioRepository;
 
     @Autowired
     private JwtService jwtService;
@@ -160,5 +176,46 @@ class DisponibilidadApiTest {
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.duracionMinutos").value(30));
+    }
+
+    @Test
+    void shouldReturnAppointmentDtosWithoutHibernateProxies() throws Exception {
+        EspacioFisico espacio = espacioFisicoRepository.save(
+                new EspacioFisico(null, "Consultorio DTO", "CONSULTORIO", true));
+        Paciente paciente = pacienteRepository.save(
+                new Paciente(null, "Paciente DTO", UUID.randomUUID().toString(), true));
+        Servicio servicio = servicioRepository.save(new Servicio(null, "Consulta DTO", 30));
+        String request = """
+                {
+                  "fecha": "2026-10-19",
+                  "horaInicio": "09:00:00",
+                  "profesionalId": %d,
+                  "espacioId": %d,
+                  "pacienteId": %d,
+                  "servicioId": %d,
+                  "motivo": "Consulta de prueba"
+                }
+                """.formatted(profesional.getId(), espacio.getId(), paciente.getId(), servicio.getId());
+
+        String createdResponse = mockMvc.perform(post("/api/citas")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(request))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.paciente.nombre").value("Paciente DTO"))
+                .andExpect(jsonPath("$.profesional.nombre").value("Ana"))
+                .andExpect(jsonPath("$.espacioFisico.nombre").value("Consultorio DTO"))
+                .andExpect(jsonPath("$.servicio.nombre").value("Consulta DTO"))
+                .andReturn().getResponse().getContentAsString();
+        long appointmentId = objectMapper.readTree(createdResponse).get("id").asLong();
+
+        mockMvc.perform(get("/api/citas/rango")
+                        .header("Authorization", "Bearer " + token)
+                        .param("inicio", LocalDate.of(2026, 10, 19).toString())
+                        .param("fin", LocalDate.of(2026, 10, 19).toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(appointmentId))
+                .andExpect(jsonPath("$[0].paciente.nombre").value("Paciente DTO"))
+                .andExpect(jsonPath("$[0].profesional.nombre").value("Ana"));
     }
 }
