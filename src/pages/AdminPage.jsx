@@ -6,6 +6,7 @@ import BlockForm from "../components/BlockForm";
 import ProfessionalDetail from "../components/ProfessionalDetail";
 import ProfessionalForm from "../components/ProfessionalForm";
 import ResourceManager from "../components/ResourceManager";
+import UserManagement from "../components/UserManagement";
 import {
   appointmentService,
   blockService,
@@ -133,7 +134,7 @@ export default function AdminPage({
   const openCreateForDay = (dateKey) =>
     setAppointmentForm({
       mode: "create",
-      value: { date: dateKey, patientKind: "unregistered" },
+      value: { date: dateKey },
     });
   const openEdit = (appointment) =>
     setAppointmentForm({ mode: "edit", value: appointment });
@@ -154,10 +155,13 @@ export default function AdminPage({
       ? "Agenda general"
       : view === "professionals"
         ? "Equipo dentia"
-        : "Espacios fisicos";
+        : view === "spaces"
+          ? "Espacios físicos"
+          : "Usuarios y accesos";
 
   return (
     <div className="admin-shell">
+      <a className="skip-link" href="#main-content">Saltar al contenido principal</a>
       <aside className="admin-sidebar">
         <div className="admin-brand">
           <span>✦</span>
@@ -171,33 +175,53 @@ export default function AdminPage({
             <span>{roleLabel}</span>
           </div>
         </div>
-        <nav>
-          <span className="nav-title">Panel administrativo</span>
+        <nav aria-label="Navegación principal">
+          <span className="nav-title">Gestión clínica</span>
           <button
+            type="button"
             className={view === "agenda" ? "active" : ""}
+            aria-label="Agenda general"
+            aria-current={view === "agenda" ? "page" : undefined}
             onClick={() => setView("agenda")}
           >
             ▦ <span>Agenda general</span>
           </button>
           <button
+            type="button"
             className={view === "professionals" ? "active" : ""}
+            aria-label="Equipo de trabajo"
+            aria-current={view === "professionals" ? "page" : undefined}
             onClick={() => setView("professionals")}
           >
-            ♧ <span>Equipo dentia</span>
+            ♧ <span>Equipo de trabajo</span>
           </button>
           <button
+            type="button"
             className={view === "spaces" ? "active" : ""}
+            aria-label="Espacios físicos"
+            aria-current={view === "spaces" ? "page" : undefined}
             onClick={() => setView("spaces")}
           >
-            ⌂ <span>Espacios fisicos</span>
+            ⌂ <span>Espacios físicos</span>
           </button>
+          {session.role === "admin" && (
+            <button
+              type="button"
+              className={view === "users" ? "active" : ""}
+              aria-label="Usuarios y accesos"
+              aria-current={view === "users" ? "page" : undefined}
+              onClick={() => setView("users")}
+            >
+              ♙ <span>Usuarios y accesos</span>
+            </button>
+          )}
         </nav>
-        <button className="logout" onClick={onLogout}>
+        <button className="logout" type="button" onClick={onLogout}>
           ↪ Cerrar sesion
         </button>
       </aside>
 
-      <main className="admin-main">
+      <main className="admin-main" id="main-content" tabIndex="-1">
         <header className="admin-header">
           <div>
             <span className="eyebrow">
@@ -206,9 +230,6 @@ export default function AdminPage({
             <h1>{sectionTitle}</h1>
           </div>
           <div className="header-profile">
-            <span className="header-status">
-              <span /> Sistema operativo
-            </span>
             <div className="profile-chip">
               <span className="profile-avatar">{initials}</span>
               <div>
@@ -220,7 +241,7 @@ export default function AdminPage({
         </header>
 
         <div className="admin-content">
-          {pageError && <div className="form-error">{pageError}</div>}
+          {pageError && <div className="form-error" role="alert">{pageError}</div>}
           {view === "agenda" && (
             <>
               <section className="agenda-intro">
@@ -289,14 +310,15 @@ export default function AdminPage({
                   <span className="eyebrow">Administracion</span>
                   <h2>Equipo dentia</h2>
                   <p>
-                    Registra los profesionales que atenderán en la clínica.
+                    Administra las fichas del equipo. Para dar acceso al sistema,
+                    crea una cuenta en «Usuarios y accesos».
                   </p>
                 </div>
                 <button
                   className="primary-button"
                   onClick={() => setProfessionalForm(true)}
                 >
-                  ＋ Registrar trabajador
+                  ＋ Registrar ficha profesional
                 </button>
               </div>
               <div className="resource-list">
@@ -335,7 +357,7 @@ export default function AdminPage({
 
           {view === "spaces" && (
             <ResourceManager
-              title="Espacios fisicos"
+              title="Espacios físicos"
               description="Administra los consultorios y salas disponibles para las citas."
               items={spaces}
               fields={[
@@ -357,6 +379,7 @@ export default function AdminPage({
               }}
             />
           )}
+          {view === "users" && session.role === "admin" && <UserManagement />}
         </div>
       </main>
 

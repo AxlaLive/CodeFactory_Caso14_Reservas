@@ -126,3 +126,121 @@
 
 /* --- Formulario de bloqueo y utilidades --- */
 .block-form { width: min(100%, 520px); }
+
+/* Accesibilidad y gestión de cuentas */
+:focus-visible { outline: 3px solid #004b87; outline-offset: 3px; }
+button:disabled { cursor: not-allowed; opacity: .65; }
+.skip-link { position: fixed; z-index: 20; top: 12px; left: 12px; padding: 12px 16px; transform: translateY(-160%); border-radius: 6px; color: #fff; background: #153d3b; font-size: 16px; font-weight: 700; }
+.skip-link:focus { transform: translateY(0); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+.admin-shell { --navy: #153d3b; --green: #174d3b; --line: #667770; color: #172e2b; }
+.admin-sidebar { color: #fff; }
+.admin-brand small, .admin-user span, .nav-title, .admin-sidebar nav button, .logout { color: #fff; }
+.admin-sidebar nav button.active { background: #245449; }
+.admin-sidebar nav button, .logout { min-height: 48px; font-size: 16px; }
+.admin-sidebar nav button:hover, .logout:hover { color: #fff; background: #245449; }
+.logout { border-top-color: #fff; }
+.admin-header h1 { font-size: 28px; }
+.eyebrow { color: #344a41; font-size: 12px; letter-spacing: .08em; }
+.admin-content { font-size: 16px; }
+.agenda-intro p, .resource-heading p, .legend { color: #344a41; font-size: 16px; line-height: 1.6; }
+.primary-button { min-height: 48px; color: #fff; background: #174d3b; font-size: 16px; }
+.primary-button:hover { background: #103b2d; }
+.primary-button:focus-visible, .secondary-button:focus-visible { outline-color: #004b87; }
+.admin-header .profile-chip strong { color: #172e2b; font-size: 14px; }
+.admin-header .profile-chip small { color: #344a41; font-size: 12px; }
+.resource-item strong { color: #172e2b; font-size: 16px; }
+.resource-item span, .resource-item i { color: #344a41; font-size: 14px; }
+.login-page.login-entry-page { background: #f1f5f2; }
+.login-page.login-entry-page .login-visual { min-height: 520px; padding: 36px; border-radius: 16px; color: #fff; background: #153d3b; }
+.login-page.login-entry-page .login-logo { color: #fff; }
+.login-page.login-entry-page .login-visual > div:last-child span { color: #fff; font-size: 16px; }
+.login-page.login-entry-page .login-visual > div:last-child strong { color: #fff; }
+.login-page.login-entry-page .login-visual > div:last-child p { color: #fff; font-size: 16px; }
+.login-page.login-entry-page .login-panel h1 { color: #172e2b; }
+.login-page.login-entry-page .login-panel > p:not(.login-switch) { color: #344a41; font-size: 16px; }
+.login-page.login-entry-page .login-panel label { color: #172e2b; font-size: 16px; }
+.login-page.login-entry-page .login-panel input { min-height: 48px; border-color: #52635a; color: #172e2b; font-size: 16px; }
+.login-page.login-entry-page .login-panel input::placeholder { color: #52635a; }
+.login-page.login-entry-page .login-panel input:focus-visible { outline: 3px solid #004b87; outline-offset: 2px; }
+.login-page.login-entry-page .login-panel .login-button { background: #174d3b; font-size: 16px; }
+.login-page.login-entry-page .login-panel .form-error { color: #7d1c17; background: #fff0ed; font-size: 16px; }
+.user-management { padding: 26px; border: 1px solid #667770; border-radius: 9px; background: #fff; }
+.user-management-heading, .user-form-heading, .user-list-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.user-management-heading { padding-bottom: 22px; border-bottom: 1px solid #667770; }
+.user-management h2, .user-management h3 { margin: 0; color: #172e2b; font-family: Manrope, sans-serif; }
+.user-management h2 { font-size: 24px; }
+.user-management h3 { font-size: 20px; }
+.user-management-heading p, .user-form-heading p, .user-list-heading p { max-width: 760px; margin: 10px 0 0; color: #344a41; font-size: 16px; line-height: 1.6; }
+.user-form { padding: 24px 0; border-bottom: 1px solid #667770; }
+.user-form-heading { margin-bottom: 20px; }
+.user-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; }
+.user-field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.user-field label { color: #172e2b; font-size: 16px; font-weight: 700; }
+.user-field input, .user-field select { width: 100%; min-height: 48px; padding: 10px 12px; border: 1px solid #52635a; border-radius: 6px; color: #172e2b; background: #fff; font-size: 16px; }
+.user-field input:focus-visible, .user-field select:focus-visible { outline: 3px solid #004b87; outline-offset: 2px; }
+.user-form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+.user-form-actions button { min-height: 48px; padding: 0 18px; font-size: 16px; }
+.user-list-heading { align-items: end; padding: 24px 0 12px; }
+.user-list-heading p { margin: 0; }
+.user-table-scroll { overflow-x: auto; }
+.user-table { width: 100%; border-collapse: collapse; text-align: left; }
+.user-table th, .user-table td { min-height: 48px; padding: 14px 12px; border-bottom: 1px solid #667770; color: #172e2b; font-size: 16px; }
+.user-table thead th { color: #172e2b; background: #f1f5f2; font-weight: 700; }
+.user-state { display: inline-block; padding: 5px 9px; border-radius: 4px; color: #123e2b; background: #e4f4ea; font-weight: 700; }
+.user-state.inactive { color: #641d17; background: #fff0ed; }
+.user-empty, .user-management [role="status"] { color: #344a41; font-size: 16px; }
+.user-notice { padding: 14px; border: 1px solid #286b4d; border-radius: 6px; color: #123e2b; background: #e4f4ea; font-size: 16px; }
+.user-management .form-error { padding: 14px; border: 1px solid #8d2b24; border-radius: 6px; color: #641d17; background: #fff0ed; font-size: 16px; }
+.form-error, .field-hint, .field-error { color: #641d17; font-size: 16px; line-height: 1.5; }
+.weekly-header h2 { color: #172e2b; font-size: 24px; }
+.week-actions button { min-height: 48px; padding: 0 14px; border-color: #52635a; color: #172e2b; font-size: 16px; }
+.week-actions button:hover { border-color: #174d3b; color: #123e2b; background: #e4f4ea; }
+.day-heading { min-height: 84px; height: auto; gap: 7px; color: #172e2b; font-size: 16px; }
+.day-heading:hover { color: #123e2b; background: #e4f4ea; }
+.day-heading .day-cta { display: block; color: #123e2b; font-size: 14px; }
+.day-heading b { color: #123e2b; font-size: 14px; }
+.day-empty { color: #344a41; font-size: 16px; }
+.slot-appointment { color: #172e2b; }
+.slot-appointment strong { font-size: 14px; }
+.slot-appointment span, .slot-appointment small { color: #172e2b; font-size: 14px; }
+.slot-buffer { min-height: 32px; height: auto; color: #172e2b; }
+.slot-buffer span, .slot-block strong, .slot-block span { color: #172e2b; font-size: 14px; }
+.slot-block { min-height: 54px; }
+.weekly-scroll:focus-visible { outline-offset: -3px; }
+
+@media (max-width: 900px) {
+  .admin-shell { display: block; }
+  .admin-sidebar { display: flex; width: 100%; padding: 14px 18px; }
+  .admin-brand { display: flex; gap: 10px; padding: 0 4px 14px; font-size: 20px; }
+  .admin-brand span { flex: 0 0 29px; }
+  .admin-brand small { margin-left: 4px; font-size: 12px; }
+  .admin-user { display: none; }
+  .admin-sidebar nav { display: flex; gap: 6px; overflow-x: auto; flex: none; }
+  .admin-sidebar nav .nav-title { display: none; }
+  .admin-sidebar nav button { display: inline-flex; flex: 0 0 auto; width: auto; min-height: 48px; margin: 0; }
+  .admin-sidebar nav button span { display: inline; }
+  .logout { width: auto; min-height: 48px; padding: 10px 12px; margin: 8px 0 0; border-top: 1px solid #fff; }
+}
+
+@media (max-width: 680px) {
+  .admin-header { gap: 12px; padding: 12px 16px; }
+  .admin-header h1 { font-size: 22px; }
+  .admin-header .eyebrow { font-size: 11px; }
+  .admin-header .profile-chip { padding: 4px; }
+  .admin-header .profile-chip div { display: block; }
+  .admin-content { padding: 20px 16px 36px; }
+  .user-management { padding: 18px 14px; }
+  .user-management-heading, .user-form-heading, .user-list-heading { align-items: stretch; flex-direction: column; gap: 14px; }
+  .user-management-heading > .primary-button { width: 100%; }
+  .user-form-grid { grid-template-columns: 1fr; }
+  .user-form-actions { flex-direction: column-reverse; }
+  .user-form-actions button { width: 100%; }
+  .user-table { min-width: 720px; }
+  .week-actions { flex-wrap: wrap; justify-content: flex-end; }
+  .week-actions button { min-height: 44px; padding: 0 10px; font-size: 14px; }
+  .login-page.login-entry-page { display: block; padding: 18px; }
+  .login-page.login-entry-page .login-visual { min-height: auto; gap: 38px; padding: 24px; margin-bottom: 18px; }
+  .login-page.login-entry-page .login-visual > div:last-child strong { font-size: 34px; }
+  .login-page.login-entry-page .login-panel { padding: 24px 18px; }
+}

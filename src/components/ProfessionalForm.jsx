@@ -54,7 +54,7 @@ export default function ProfessionalForm({ onClose, onSave }) {
           <button type="button" onClick={onClose}>×</button>
         </div>
         <p className="field-hint">
-          Este registro se guarda en la base de datos. La creación de cuentas de acceso se habilitará en otra etapa.
+          Esta ficha se usa para organizar la agenda. Para permitir el inicio de sesión, crea también una cuenta en «Usuarios y accesos».
         </p>
         {errors.form && <div className="form-error">{errors.form}</div>}
         <div className="form-grid">
