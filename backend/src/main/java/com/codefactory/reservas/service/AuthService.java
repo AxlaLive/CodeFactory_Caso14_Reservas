@@ -9,6 +9,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
+
 @Service
 public class AuthService {
 
@@ -22,15 +24,24 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(
+                        request.getUsername(),
+                        request.getPassword()
+                )
         );
 
-        String role = authentication.getAuthorities().stream()
-            .findFirst()
-            .map(GrantedAuthority::getAuthority)
-            .orElse("ROLE_CLIENTE");
+        String authority = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "El usuario autenticado no tiene un rol asignado."));
+        String role = authority.startsWith("ROLE_PROFESSIONAL")
+                || authority.startsWith("ROLE_RECEPTIONIST")
+                ? authority.substring("ROLE_".length()).toLowerCase(Locale.ROOT)
+                : authority;
+        String username = authentication.getName();
+        String token = jwtService.generateToken(username, authority);
 
-        String token = jwtService.generateToken(authentication.getName(), role);
-        return new AuthResponse(token, authentication.getName(), role);
+        return new AuthResponse(token, username, role);
     }
 }

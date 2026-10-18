@@ -21,14 +21,14 @@ public org.springframework.boot.CommandLineRunner initData(com.codefactory.reser
                     .documento("000000000")
                     .especialidad("Administración")
                     .correo("admin@dentia.com")
-                    .password(encoder.encode("dentia123"))
+                    .rol("ADMIN")
+                    .usuario("admin")
+                    .passwordHash(encoder.encode("dentia123"))
                     .activo(true)
                     .build();
-            
             profesionalRepository.save(admin);
             System.out.println("✅ Usuario de prueba creado: admin@dentia.com / dentia123");
         }
     };
 }
 }
-
