@@ -152,7 +152,7 @@ class DisponibilidadApiTest {
                 .andExpect(jsonPath("$.telefono").value("3001234567"))
                 .andExpect(jsonPath("$.correo").value("paciente@example.com"));
 
-        mockMvc.perform(post("/api/espacios")
+        String spaceResponse = mockMvc.perform(post("/api/espacios")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -163,7 +163,26 @@ class DisponibilidadApiTest {
                                 }
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.nombre").value("Consultorio API"));
+                .andExpect(jsonPath("$.nombre").value("Consultorio API"))
+                .andReturn().getResponse().getContentAsString();
+        long spaceId = objectMapper.readTree(spaceResponse).get("id").asLong();
+
+        mockMvc.perform(put("/api/espacios/{id}", spaceId)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nombre": "Consultorio API actualizado",
+                                  "tipo": "CONSULTORIO",
+                                  "activo": true
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Consultorio API actualizado"));
+
+        mockMvc.perform(delete("/api/espacios/{id}", spaceId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNoContent());
 
         mockMvc.perform(post("/api/servicios")
                         .header("Authorization", "Bearer " + token)
@@ -217,5 +236,10 @@ class DisponibilidadApiTest {
                 .andExpect(jsonPath("$[0].id").value(appointmentId))
                 .andExpect(jsonPath("$[0].paciente.nombre").value("Paciente DTO"))
                 .andExpect(jsonPath("$[0].profesional.nombre").value("Ana"));
+
+        mockMvc.perform(delete("/api/espacios/{id}", espacio.getId())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activo").value(false));
     }
 }

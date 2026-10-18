@@ -40,8 +40,13 @@ public class TrabajadorController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        trabajadorService.eliminar(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> eliminar(@PathVariable Long id) {
+        if (trabajadorService.eliminar(id)) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(trabajadorService.listar().stream()
+                .filter(trabajador -> trabajador.id().equals(id))
+                .findFirst()
+                .orElseThrow());
     }
 }

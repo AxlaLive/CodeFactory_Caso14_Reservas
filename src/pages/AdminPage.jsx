@@ -5,6 +5,7 @@ import AppointmentForm from "../components/AppointmentForm";
 import BlockForm from "../components/BlockForm";
 import ProfessionalDetail from "../components/ProfessionalDetail";
 import ProfessionalForm from "../components/ProfessionalForm";
+import PatientManagement from "../components/PatientManagement";
 import ResourceManager from "../components/ResourceManager";
 import UserManagement from "../components/UserManagement";
 import {
@@ -28,8 +29,9 @@ export default function AdminPage({
   const [spaces, setSpaces] = useState([]);
   const [appointmentForm, setAppointmentForm] = useState(null);
   const [detailAppointment, setDetailAppointment] = useState(null);
-  const [professionalForm, setProfessionalForm] = useState(false);
+  const [professionalForm, setProfessionalForm] = useState(null);
   const [blockFormOpen, setBlockFormOpen] = useState(false);
+  const [selectedBlock, setSelectedBlock] = useState(null);
   const [selectedProfessional, setSelectedProfessional] = useState(null);
   const [notice, setNotice] = useState("");
   const [pageError, setPageError] = useState("");
@@ -56,14 +58,29 @@ export default function AdminPage({
 
   const saveBlock = async (data) => {
     const saved = await blockService.save(data);
-    setBlocks((current) => [...current, saved]);
+    setBlocks((current) => current.some((item) => item.id === saved.id)
+      ? current.map((item) => item.id === saved.id ? saved : item)
+      : [...current, saved]);
     setBlockFormOpen(false);
-    notify("Disponibilidad guardada en la agenda compartida.");
+    setSelectedBlock(null);
+    notify(data.id ? "Disponibilidad actualizada en la agenda compartida." : "Disponibilidad guardada en la agenda compartida.");
+  };
+
+  const deleteBlock = async (block) => {
+    if (!window.confirm("¿Eliminar esta franja de disponibilidad? Las citas ya registradas se conservarán.")) {
+      return;
+    }
+    await blockService.remove(block.id);
+    setBlocks((current) => current.filter((item) => item.id !== block.id));
+    setBlockFormOpen(false);
+    setSelectedBlock(null);
+    notify("Franja eliminada. Las citas existentes se conservaron.");
   };
 
   const bookableProfessionals = professionals.filter(
     (item) => item.active !== false && item.roleType !== "receptionist",
   );
+  const bookableSpaces = spaces.filter((item) => item.active !== false);
 
   const saveAppointment = async (data) => {
     const saved = await appointmentService.save({
@@ -119,16 +136,50 @@ export default function AdminPage({
   const deleteProfessional = async (professional) => {
     if (
       !window.confirm(
-        `¿Eliminar definitivamente a ${professional.name} del sistema?`,
+        `¿Eliminar a ${professional.name}? Si tiene citas o historia clínica, se conservará como inactivo.`,
       )
     )
       return;
-    await professionalService.remove(professional.id);
-    setProfessionals((current) =>
-      current.filter((item) => item.id !== professional.id),
-    );
+    const retained = await professionalService.remove(professional.id);
+    if (retained) {
+      setProfessionals((current) => current.map((item) =>
+        item.id === retained.id ? retained : item,
+      ));
+      setSelectedProfessional(retained);
+      notify("El trabajador tiene citas o disponibilidad asociada; se conservó como inactivo.");
+      return;
+    }
+    setProfessionals((current) => current.filter((item) => item.id !== professional.id));
     setSelectedProfessional(null);
-    notify("Trabajador eliminado del sistema.");
+    notify("Trabajador eliminado. No tenía citas ni historial asociados.");
+  };
+
+  const updateProfessional = async (professional, data) => {
+    const updated = await professionalService.update(professional.id, data);
+    setProfessionals((current) => current.map((item) =>
+      item.id === updated.id ? updated : item,
+    ));
+    setSelectedProfessional(updated);
+    setProfessionalForm(null);
+    notify("Ficha profesional actualizada.");
+  };
+
+  const updateSpace = async (id, data) => {
+    const updated = await spaceService.update(id, data);
+    setSpaces((current) => current.map((item) => item.id === updated.id ? updated : item));
+    notify(updated.active ? "Espacio actualizado." : "Espacio desactivado.");
+    return updated;
+  };
+
+  const deleteSpace = async (space) => {
+    const retained = await spaceService.remove(space.id);
+    if (retained) {
+      setSpaces((current) => current.map((item) => item.id === retained.id ? retained : item));
+      notify("El espacio tiene citas asociadas; se conservó como inactivo.");
+      return;
+    }
+    setSpaces((current) => current.filter((item) => item.id !== space.id));
+    notify("Espacio eliminado. No tenía citas asociadas.");
   };
 
   const openCreateForDay = (dateKey) =>
@@ -157,7 +208,9 @@ export default function AdminPage({
         ? "Equipo dentia"
         : view === "spaces"
           ? "Espacios físicos"
-          : "Usuarios y accesos";
+          : view === "users"
+            ? "Usuarios y accesos"
+            : "Pacientes";
 
   return (
     <div className="admin-shell">
@@ -215,6 +268,15 @@ export default function AdminPage({
               ♙ <span>Usuarios y accesos</span>
             </button>
           )}
+          <button
+            type="button"
+            className={view === "patients" ? "active" : ""}
+            aria-label="Pacientes e historias clínicas"
+            aria-current={view === "patients" ? "page" : undefined}
+            onClick={() => setView("patients")}
+          >
+            ♧ <span>Pacientes</span>
+          </button>
         </nav>
         <button className="logout" type="button" onClick={onLogout}>
           ↪ Cerrar sesion
@@ -261,9 +323,14 @@ export default function AdminPage({
                     </span>
                   </div>
                 </div>
-                <button className="primary-button" onClick={() => setBlockFormOpen(true)} disabled={!professionals.length}>
-                  ＋ Configurar disponibilidad
-                </button>
+                {session.role === "admin" && (
+                  <button className="primary-button" onClick={() => {
+                    setSelectedBlock(null);
+                    setBlockFormOpen(true);
+                  }} disabled={!professionals.length}>
+                    ＋ Configurar disponibilidad
+                  </button>
+                )}
               </section>
               <AgendaWeekly
                 weekDays={weekDays}
@@ -291,15 +358,24 @@ export default function AdminPage({
                 onToday={() => onChangeWeek(new Date())}
                 onCreateForDay={openCreateForDay}
                 onSelectAppointment={setDetailAppointment}
+                onSelectBlock={session.role === "admin" ? (block) => {
+                  setSelectedBlock(block);
+                  setBlockFormOpen(true);
+                } : undefined}
               />
             </>
           )}
           {blockFormOpen && (
             <BlockForm
               weekDate={weekDate}
+              value={selectedBlock}
               professionals={bookableProfessionals}
-              onClose={() => setBlockFormOpen(false)}
+              onClose={() => {
+                setBlockFormOpen(false);
+                setSelectedBlock(null);
+              }}
               onSave={saveBlock}
+              onDelete={deleteBlock}
             />
           )}
 
@@ -314,12 +390,14 @@ export default function AdminPage({
                     crea una cuenta en «Usuarios y accesos».
                   </p>
                 </div>
-                <button
-                  className="primary-button"
-                  onClick={() => setProfessionalForm(true)}
-                >
-                  ＋ Registrar ficha profesional
-                </button>
+                {session.role === "admin" && (
+                  <button
+                    className="primary-button"
+                    onClick={() => setProfessionalForm({})}
+                  >
+                    ＋ Registrar ficha profesional
+                  </button>
+                )}
               </div>
               <div className="resource-list">
                 {professionals.map((item) => (
@@ -377,9 +455,13 @@ export default function AdminPage({
                 setSpaces((current) => [...current, item]);
                 notify("Espacio registrado correctamente.");
               }}
+              onUpdate={updateSpace}
+              onDelete={deleteSpace}
+              readOnly={session.role !== "admin"}
             />
           )}
           {view === "users" && session.role === "admin" && <UserManagement />}
+          {view === "patients" && <PatientManagement session={session} />}
         </div>
       </main>
 
@@ -388,7 +470,7 @@ export default function AdminPage({
           value={appointmentForm.value}
           mode={appointmentForm.mode}
           professionals={bookableProfessionals}
-          spaces={spaces}
+          spaces={bookableSpaces}
           appointments={appointments}
           blocks={blocks}
           onClose={() => setAppointmentForm(null)}
@@ -404,10 +486,13 @@ export default function AdminPage({
           onCancel={cancelAppointment}
         />
       )}
-      {professionalForm && (
+      {professionalForm !== null && (
         <ProfessionalForm
-          onClose={() => setProfessionalForm(false)}
-          onSave={createProfessional}
+          initialValue={professionalForm.id ? professionalForm : undefined}
+          onClose={() => setProfessionalForm(null)}
+          onSave={professionalForm.id
+            ? (data) => updateProfessional(professionalForm, data)
+            : createProfessional}
         />
       )}
       {selectedProfessional && (
@@ -416,6 +501,11 @@ export default function AdminPage({
           onClose={() => setSelectedProfessional(null)}
           onToggleActive={toggleProfessional}
           onDelete={deleteProfessional}
+          canManage={session.role === "admin"}
+          onEdit={(professional) => {
+            setSelectedProfessional(null);
+            setProfessionalForm(professional);
+          }}
         />
       )}
       {notice && <div className="notice">✓ {notice}</div>}

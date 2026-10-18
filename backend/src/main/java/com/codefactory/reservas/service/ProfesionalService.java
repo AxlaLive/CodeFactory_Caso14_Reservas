@@ -1,9 +1,12 @@
 package com.codefactory.reservas.service;
 
 import com.codefactory.reservas.domain.Profesional;
+import com.codefactory.reservas.repository.CitaRepository;
+import com.codefactory.reservas.repository.DisponibilidadRepository;
+import com.codefactory.reservas.repository.HistoriaClinicaRepository;
 import com.codefactory.reservas.repository.ProfesionalRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,8 +14,21 @@ import java.util.Optional;
 @Service
 public class ProfesionalService {
 
-    @Autowired
-    private ProfesionalRepository profesionalRepository;
+    private final ProfesionalRepository profesionalRepository;
+    private final CitaRepository citaRepository;
+    private final DisponibilidadRepository disponibilidadRepository;
+    private final HistoriaClinicaRepository historiaClinicaRepository;
+
+    public ProfesionalService(
+            ProfesionalRepository profesionalRepository,
+            CitaRepository citaRepository,
+            DisponibilidadRepository disponibilidadRepository,
+            HistoriaClinicaRepository historiaClinicaRepository) {
+        this.profesionalRepository = profesionalRepository;
+        this.citaRepository = citaRepository;
+        this.disponibilidadRepository = disponibilidadRepository;
+        this.historiaClinicaRepository = historiaClinicaRepository;
+    }
 
     public List<Profesional> obtenerTodos() {
         return profesionalRepository.findAll();
@@ -38,7 +54,19 @@ public class ProfesionalService {
         }).orElseThrow(() -> new RuntimeException("Profesional no encontrado con id: " + id));
     }
 
-    public void eliminar(Long id) {
-        profesionalRepository.deleteById(id);
+    @Transactional
+    public boolean eliminar(Long id) {
+        Profesional profesional = profesionalRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Profesional no encontrado con id: " + id));
+        boolean tieneReferencias = citaRepository.existsByProfesionalId(id)
+                || disponibilidadRepository.existsByProfesionalId(id)
+                || historiaClinicaRepository.existsByProfesionalId(id);
+        if (tieneReferencias) {
+            profesional.setActivo(false);
+            profesionalRepository.save(profesional);
+            return false;
+        }
+        profesionalRepository.delete(profesional);
+        return true;
     }
 }

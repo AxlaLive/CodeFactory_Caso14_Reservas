@@ -62,4 +62,10 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
 
     @EntityGraph(attributePaths = {"profesional", "espacioFisico", "paciente", "servicio"})
     Optional<Cita> findWithRelationsById(Long id);
+
+    boolean existsByProfesionalId(Long profesionalId);
+
+    boolean existsByEspacioFisicoId(Long espacioId);
+
+    boolean existsByPacienteId(Long pacienteId);
 }

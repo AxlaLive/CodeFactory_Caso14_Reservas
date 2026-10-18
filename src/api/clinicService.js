@@ -40,11 +40,15 @@ function idString(id) {
 }
 
 function mapProfessional(item) {
+  const roleType = item.rol?.toLowerCase() === 'receptionist'
+    ? 'receptionist'
+    : 'professional'
+  const surname = item.apellido === 'No especificado' ? '' : item.apellido
   return {
     id: idString(item.id),
-    name: [item.nombre, item.apellido].filter(Boolean).join(' '),
-    roleType: 'professional',
-    role: item.especialidad,
+    name: [item.nombre, surname].filter(Boolean).join(' '),
+    roleType,
+    role: roleType === 'receptionist' ? 'Recepcionista' : item.especialidad,
     identification: item.documento,
     email: item.correo,
     active: item.activo,
@@ -53,6 +57,17 @@ function mapProfessional(item) {
 
 function mapSpace(item) {
   return { id: idString(item.id), name: item.nombre, type: item.tipo, active: item.activo }
+}
+
+function mapPatient(item) {
+  return {
+    id: idString(item.id),
+    name: item.nombre || '',
+    identification: item.documento || '',
+    phone: item.telefono || '',
+    email: item.correo || '',
+    active: item.activo !== false,
+  }
 }
 
 function mapAppointment(item) {
@@ -263,7 +278,7 @@ export const professionalService = {
       method: 'POST',
       body: JSON.stringify({
         nombre,
-        apellido: apellidos.join(' ') || 'No especificado',
+        apellido: apellidos.join(' '),
         documento: data.identification,
         especialidad: data.role,
         correo: data.email,
@@ -276,11 +291,24 @@ export const professionalService = {
     const current = await apiRequest(`/v1/profesionales/${id}`)
     const updated = await apiRequest(`/v1/profesionales/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ ...current, activo: changes.active }),
+      body: JSON.stringify({
+        ...current,
+        nombre: changes.name ? changes.name.trim().split(/\s+/)[0] : current.nombre,
+        apellido: changes.name
+          ? changes.name.trim().split(/\s+/).slice(1).join(' ')
+          : current.apellido,
+        especialidad: changes.role ?? current.especialidad,
+        documento: changes.identification ?? current.documento,
+        correo: changes.email ?? current.correo,
+        activo: changes.active ?? current.activo,
+      }),
     })
     return mapProfessional(updated)
   },
-  remove: async (id) => apiRequest(`/v1/profesionales/${id}`, { method: 'DELETE' }),
+  remove: async (id) => {
+    const response = await apiRequest(`/v1/profesionales/${id}`, { method: 'DELETE' })
+    return response ? mapProfessional(response) : null
+  },
 }
 
 function mapWorker(item) {
@@ -311,6 +339,40 @@ export const spaceService = {
     method: 'POST',
     body: JSON.stringify({ nombre: data.name, tipo: data.type, activo: true }),
   })),
+  update: async (id, data) => mapSpace(await apiRequest(`/espacios/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      nombre: data.name,
+      tipo: data.type,
+      activo: data.active !== false,
+    }),
+  })),
+  remove: async (id) => {
+    const response = await apiRequest(`/espacios/${id}`, { method: 'DELETE' })
+    return response ? mapSpace(response) : null
+  },
+}
+
+export const patientService = {
+  list: async () => (await apiRequest('/pacientes')).map(mapPatient),
+  create: async (data) => mapPatient(await apiRequest('/pacientes', {
+    method: 'POST',
+    body: JSON.stringify({
+      nombre: data.name.trim(),
+      documento: data.identification.trim(),
+      telefono: data.phone.trim() || null,
+      correo: data.email.trim() || null,
+      activo: true,
+    }),
+  })),
+}
+
+export const clinicalHistoryService = {
+  list: async (patientId) => apiRequest(`/v1/pacientes/${patientId}/historia-clinica`),
+  create: async (patientId, data) => apiRequest(`/v1/pacientes/${patientId}/historia-clinica`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
 }
 
 export const authService = {
