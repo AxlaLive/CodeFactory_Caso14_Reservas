@@ -4,8 +4,15 @@ import { SPECIALTIES } from "../api/clinicService";
 const empty = { name: "", role: "", identification: "", email: "" };
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export default function ProfessionalForm({ onClose, onSave }) {
-  const [form, setForm] = useState(empty);
+export default function ProfessionalForm({ initialValue, onClose, onSave }) {
+  const [form, setForm] = useState(() => initialValue
+    ? {
+      name: initialValue.name,
+      role: initialValue.role,
+      identification: initialValue.identification,
+      email: initialValue.email,
+    }
+    : empty);
   const [errors, setErrors] = useState({});
 
   const update = (field, value) => {
@@ -49,7 +56,7 @@ export default function ProfessionalForm({ onClose, onSave }) {
         <div className="form-header">
           <div>
             <span className="eyebrow">Nuevo registro</span>
-            <h2>Registrar profesional</h2>
+            <h2>{initialValue ? "Editar ficha profesional" : "Registrar profesional"}</h2>
           </div>
           <button type="button" onClick={onClose}>×</button>
         </div>
@@ -78,7 +85,9 @@ export default function ProfessionalForm({ onClose, onSave }) {
         </div>
         <footer className="modal-footer">
           <button type="button" className="secondary-button" onClick={onClose}>Cancelar</button>
-          <button className="primary-button" type="submit">Guardar profesional</button>
+          <button className="primary-button" type="submit">
+            {initialValue ? "Guardar cambios" : "Guardar profesional"}
+          </button>
         </footer>
       </form>
     </div>

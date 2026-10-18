@@ -103,7 +103,34 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/h2-console/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/servicios", "/api/servicios/**")
-                        .hasAnyRole("ADMIN", "CLIENTE")
+                        .hasAnyRole("ADMIN", "PROFESSIONAL", "RECEPTIONIST", "CLIENTE")
+                        .requestMatchers(HttpMethod.POST, "/api/servicios")
+                        .hasAnyRole("ADMIN", "RECEPTIONIST")
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/citas/rango",
+                                "/api/disponibilidades", "/api/disponibilidades/**",
+                                "/api/pacientes", "/api/pacientes/**",
+                                "/api/espacios", "/api/v1/profesionales", "/api/v1/profesionales/**",
+                                "/api/v1/pacientes/*/historia-clinica")
+                        .hasAnyRole("ADMIN", "PROFESSIONAL", "RECEPTIONIST")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/pacientes/*/historia-clinica")
+                        .hasRole("PROFESSIONAL")
+                        .requestMatchers(HttpMethod.POST, "/api/citas")
+                        .hasAnyRole("ADMIN", "RECEPTIONIST")
+                        .requestMatchers(HttpMethod.PUT, "/api/citas/**")
+                        .hasAnyRole("ADMIN", "RECEPTIONIST")
+                        .requestMatchers(HttpMethod.PATCH, "/api/citas/*/cancelar")
+                        .hasAnyRole("ADMIN", "RECEPTIONIST")
+                        .requestMatchers(HttpMethod.POST, "/api/disponibilidades")
+                        .hasAnyRole("ADMIN", "PROFESSIONAL")
+                        .requestMatchers(HttpMethod.PUT, "/api/disponibilidades/**")
+                        .hasAnyRole("ADMIN", "PROFESSIONAL")
+                        .requestMatchers(HttpMethod.DELETE, "/api/disponibilidades/**")
+                        .hasAnyRole("ADMIN", "PROFESSIONAL")
+                        .requestMatchers(HttpMethod.POST, "/api/pacientes")
+                        .hasAnyRole("ADMIN", "PROFESSIONAL", "RECEPTIONIST")
+                        .requestMatchers(HttpMethod.PUT, "/api/pacientes/**")
+                        .hasAnyRole("ADMIN", "PROFESSIONAL", "RECEPTIONIST")
                         .anyRequest().hasRole("ADMIN"))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

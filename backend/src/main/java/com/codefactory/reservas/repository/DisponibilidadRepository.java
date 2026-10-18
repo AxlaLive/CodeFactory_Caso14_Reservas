@@ -12,8 +12,12 @@ import java.util.List;
 
 public interface DisponibilidadRepository extends JpaRepository<Disponibilidad, Long> {
 
+    boolean existsByProfesionalId(Long profesionalId);
+
     List<Disponibilidad> findByProfesionalIdAndFechaBetweenOrderByFechaAscHoraInicioAsc(
             Long profesionalId, LocalDate inicio, LocalDate fin);
+
+    List<Disponibilidad> findByProfesionalIdOrderByFechaAscHoraInicioAsc(Long profesionalId);
 
     @Query("""
             SELECT d FROM Disponibilidad d

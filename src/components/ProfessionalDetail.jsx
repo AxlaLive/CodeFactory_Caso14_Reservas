@@ -3,6 +3,8 @@ export default function ProfessionalDetail({
   onClose,
   onToggleActive,
   onDelete,
+  onEdit,
+  canManage = true,
 }) {
   const active = professional.active !== false;
   const initials = professional.name
@@ -21,7 +23,7 @@ export default function ProfessionalDetail({
         <div className="form-header">
           <div>
             <span className="eyebrow">Ficha del trabajador</span>
-            <h2>Datos del profesional</h2>
+            <h2>Datos del trabajador</h2>
           </div>
           <button type="button" onClick={onClose}>
             ×
@@ -44,7 +46,7 @@ export default function ProfessionalDetail({
         <dl className="detail-list">
           <div>
             <dt>Rol</dt>
-            <dd>Profesional</dd>
+            <dd>{professional.roleType === "receptionist" ? "Recepcionista" : "Profesional"}</dd>
           </div>
           <div>
             <dt>Especialidad</dt>
@@ -60,22 +62,33 @@ export default function ProfessionalDetail({
           </div>
         </dl>
 
-        <footer className="modal-footer detail-actions">
-          <button
-            type="button"
-            className="secondary-button danger-button"
-            onClick={() => onDelete(professional)}
-          >
-            Eliminar del sistema
-          </button>
-          <button
-            type="button"
-            className={active ? "secondary-button" : "primary-button"}
-            onClick={() => onToggleActive(professional)}
-          >
-            {active ? "Marcar como inactivo" : "Marcar como activo"}
-          </button>
-        </footer>
+        {canManage && (
+          <footer className="modal-footer detail-actions">
+            {professional.roleType !== "receptionist" && (
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => onEdit(professional)}
+              >
+                Editar ficha
+              </button>
+            )}
+            <button
+              type="button"
+              className="secondary-button danger-button"
+              onClick={() => onDelete(professional)}
+            >
+              Eliminar o desactivar
+            </button>
+            <button
+              type="button"
+              className={active ? "secondary-button" : "primary-button"}
+              onClick={() => onToggleActive(professional)}
+            >
+              {active ? "Marcar como inactivo" : "Marcar como activo"}
+            </button>
+          </footer>
+        )}
       </section>
     </div>
   );

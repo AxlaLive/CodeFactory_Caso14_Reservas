@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import AgendaWeekly from "../components/AgendaWeekly";
 import AppointmentDetail from "../components/AppointmentDetail";
 import BlockForm from "../components/BlockForm";
+import PatientManagement from "../components/PatientManagement";
 import { appointmentService, blockService } from "../api/clinicService";
 import { getWeekDays, toDateKey } from "../utils/agenda";
 
@@ -99,6 +100,15 @@ export default function ProfessionalPage({
           >
             ◱ <span>Agenda general</span>
           </button>
+          <button
+            type="button"
+            className={view === "patients" ? "active" : ""}
+            aria-label="Pacientes e historias clínicas"
+            aria-current={view === "patients" ? "page" : undefined}
+            onClick={() => setView("patients")}
+          >
+            ♧ <span>Pacientes</span>
+          </button>
         </nav>
         <button className="logout" type="button" onClick={onLogout}>
           ↪ Cerrar sesion
@@ -112,7 +122,9 @@ export default function ProfessionalPage({
               Clinica Sonrisa · {session.specialty || "Profesional"}
             </span>
             <h1>
-              {view === "personal" ? "Mi agenda personal" : "Agenda general"}
+              {view === "personal"
+                ? "Mi agenda personal"
+                : view === "general" ? "Agenda general" : "Pacientes"}
             </h1>
           </div>
           <div className="header-profile">
@@ -127,7 +139,9 @@ export default function ProfessionalPage({
         </header>
 
         <div className="admin-content">
-          {view === "personal" ? (
+          {view === "patients" ? (
+            <PatientManagement session={session} />
+          ) : view === "personal" ? (
             <>
               <section className="agenda-intro">
                 <div>

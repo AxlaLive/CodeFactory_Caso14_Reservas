@@ -6,6 +6,9 @@ import com.codefactory.reservas.dto.TrabajadorResponse;
 import com.codefactory.reservas.exception.BusinessConflictException;
 import com.codefactory.reservas.exception.ValidationException;
 import com.codefactory.reservas.repository.ClienteRepository;
+import com.codefactory.reservas.repository.CitaRepository;
+import com.codefactory.reservas.repository.DisponibilidadRepository;
+import com.codefactory.reservas.repository.HistoriaClinicaRepository;
 import com.codefactory.reservas.repository.ProfesionalRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,14 +36,23 @@ public class TrabajadorService {
     private final ProfesionalRepository profesionalRepository;
     private final ClienteRepository clienteRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CitaRepository citaRepository;
+    private final DisponibilidadRepository disponibilidadRepository;
+    private final HistoriaClinicaRepository historiaClinicaRepository;
 
     public TrabajadorService(
             ProfesionalRepository profesionalRepository,
             ClienteRepository clienteRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            CitaRepository citaRepository,
+            DisponibilidadRepository disponibilidadRepository,
+            HistoriaClinicaRepository historiaClinicaRepository) {
         this.profesionalRepository = profesionalRepository;
         this.clienteRepository = clienteRepository;
         this.passwordEncoder = passwordEncoder;
+        this.citaRepository = citaRepository;
+        this.disponibilidadRepository = disponibilidadRepository;
+        this.historiaClinicaRepository = historiaClinicaRepository;
     }
 
     @Transactional(readOnly = true)
@@ -115,11 +127,19 @@ public class TrabajadorService {
     }
 
     @Transactional
-    public void eliminar(Long id) {
-        if (!profesionalRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Trabajador no encontrado.");
+    public boolean eliminar(Long id) {
+        Profesional profesional = profesionalRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Trabajador no encontrado."));
+        boolean tieneReferencias = citaRepository.existsByProfesionalId(id)
+                || disponibilidadRepository.existsByProfesionalId(id)
+                || historiaClinicaRepository.existsByProfesionalId(id);
+        if (tieneReferencias) {
+            profesional.setActivo(false);
+            profesionalRepository.save(profesional);
+            return false;
         }
-        profesionalRepository.deleteById(id);
+        profesionalRepository.delete(profesional);
+        return true;
     }
 
     private TrabajadorResponse toResponse(Profesional profesional) {

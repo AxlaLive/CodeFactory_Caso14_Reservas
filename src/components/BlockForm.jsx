@@ -2,14 +2,22 @@ import { useState } from "react";
 import { BLOCK_TYPES } from "../api/clinicService";
 import { getTimeOptions, timeToMinutes, toDateKey } from "../utils/agenda";
 
-export default function BlockForm({ weekDate, onClose, onSave, professionals = [] }) {
+export default function BlockForm({
+  weekDate,
+  value,
+  onClose,
+  onSave,
+  onDelete,
+  professionals = [],
+}) {
   const [form, setForm] = useState({
-    date: toDateKey(weekDate),
-    type: "break",
-    startTime: "12:00",
-    endTime: "13:00",
-    label: "",
-    professionalId: professionals[0]?.id || "",
+    ...value,
+    date: value?.date || toDateKey(weekDate),
+    type: value?.type || "break",
+    startTime: value?.startTime || "12:00",
+    endTime: value?.endTime || "13:00",
+    label: value?.label || "",
+    professionalId: value?.professionalId || professionals[0]?.id || "",
   });
   const [error, setError] = useState("");
   const options = getTimeOptions(15);
@@ -34,6 +42,14 @@ export default function BlockForm({ weekDate, onClose, onSave, professionals = [
     }
   };
 
+  const remove = async () => {
+    try {
+      await onDelete?.(form);
+    } catch (deleteError) {
+      setError(deleteError.message);
+    }
+  };
+
   return (
     <div className="modal-layer" onMouseDown={onClose}>
       <form
@@ -43,8 +59,8 @@ export default function BlockForm({ weekDate, onClose, onSave, professionals = [
       >
         <div className="form-header">
           <div>
-            <span className="eyebrow">Agenda personal</span>
-            <h2>Marcar disponibilidad</h2>
+            <span className="eyebrow">Agenda general</span>
+            <h2>{value ? "Editar disponibilidad" : "Marcar disponibilidad"}</h2>
           </div>
           <button type="button" onClick={onClose}>
             ×
@@ -134,11 +150,20 @@ export default function BlockForm({ weekDate, onClose, onSave, professionals = [
         </div>
 
         <footer className="modal-footer">
+          {value && onDelete && (
+            <button
+              type="button"
+              className="secondary-button danger-button"
+              onClick={remove}
+            >
+              Eliminar franja
+            </button>
+          )}
           <button type="button" className="secondary-button" onClick={onClose}>
             Cancelar
           </button>
           <button className="primary-button" type="submit">
-            Guardar disponibilidad
+            {value ? "Guardar cambios" : "Guardar disponibilidad"}
           </button>
         </footer>
       </form>

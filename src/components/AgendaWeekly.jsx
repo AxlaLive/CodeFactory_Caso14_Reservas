@@ -16,6 +16,7 @@ export default function AgendaWeekly({
   onToday,
   onCreateForDay,
   onSelectAppointment,
+  onSelectBlock,
   readOnly = false,
 }) {
   const columns = buildDayColumns(appointments, showBlocks ? blocks : [], weekDays);
@@ -80,7 +81,13 @@ export default function AgendaWeekly({
                         onSelect={onSelectAppointment}
                       />
                     )
-                    : <BlockBlock key={entry.data.id} entry={entry} />
+                    : (
+                      <BlockBlock
+                        key={entry.data.id}
+                        entry={entry}
+                        onSelect={onSelectBlock}
+                      />
+                    )
                 ))}
               </div>
             ))}
@@ -123,7 +130,7 @@ function AppointmentBlock({ entry, readOnly, onSelect }) {
   );
 }
 
-function BlockBlock({ entry }) {
+function BlockBlock({ entry, onSelect }) {
   const { data } = entry;
   const label = data.label || ({
     available: "Horario disponible",
@@ -138,10 +145,24 @@ function BlockBlock({ entry }) {
       ? "available"
       : "admin";
 
-  return (
-    <div className={`slot-block ${className}`}>
+  const content = (
+    <>
       <strong>{label}</strong>
       <span>{data.startTime} - {data.endTime}</span>
-    </div>
+    </>
+  );
+
+  return onSelect ? (
+    <button
+      type="button"
+      className={`slot-block ${className} editable`}
+      onClick={() => onSelect(data)}
+      aria-label={`Editar disponibilidad: ${label}, ${data.startTime} a ${data.endTime}`}
+      title="Editar o eliminar esta franja"
+    >
+      {content}
+    </button>
+  ) : (
+    <div className={`slot-block ${className}`}>{content}</div>
   );
 }
