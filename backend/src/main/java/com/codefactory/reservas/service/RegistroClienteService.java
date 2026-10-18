@@ -55,6 +55,6 @@ public class RegistroClienteService {
         } catch (DataIntegrityViolationException ex) {
             throw new BusinessConflictException("El correo o documento ya está registrado");
         }
-        return new AuthResponse(jwt.generateToken(correo), correo, "ROLE_CLIENTE");
+        return new AuthResponse(jwt.generateToken(correo, "ROLE_CLIENTE"), correo, "ROLE_CLIENTE");
     }
 }

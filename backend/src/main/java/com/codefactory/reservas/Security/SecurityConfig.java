@@ -9,8 +9,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.Locale;
 
 @Configuration
+@EnableWebSecurity
 public class SecurityConfig {
 
     @Bean
@@ -37,23 +40,33 @@ public class SecurityConfig {
     }
 
     @Bean
-    public UserDetailsService userDetailsService(
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
+
+    @Bean
+    public UserDetailsService customUserDetailsService(
             PasswordEncoder passwordEncoder,
             ProfesionalRepository profesionalRepository,
             ClienteRepository clienteRepository) {
-        UserDetails admin = User.builder()
-                .username("admin")
+        UserDetails admin = User.withUsername("admin")
                 .password(passwordEncoder.encode("dentia123"))
                 .roles("ADMIN")
                 .build();
 
         return username -> {
+            if (username == null || username.isBlank()) {
+                throw new UsernameNotFoundException("Usuario no especificado.");
+            }
             if ("admin".equalsIgnoreCase(username)) {
                 return admin;
             }
 
+            String normalizedUsername = username.strip();
             Profesional profesional = profesionalRepository
-                    .findByUsuarioIgnoreCaseOrCorreoIgnoreCase(username, username)
+                    .findByUsuarioIgnoreCaseOrCorreoIgnoreCase(normalizedUsername, normalizedUsername)
+                    .or(() -> profesionalRepository.findByDocumento(normalizedUsername))
                     .orElse(null);
             if (profesional != null) {
                 if (profesional.getPasswordHash() == null || profesional.getPasswordHash().isBlank()) {
@@ -66,8 +79,9 @@ public class SecurityConfig {
                         .build();
             }
 
-            Cliente cliente = clienteRepository
-                    .findByCorreo(username.strip().toLowerCase(Locale.ROOT))
+            String normalizedEmail = normalizedUsername.toLowerCase(Locale.ROOT);
+            Cliente cliente = clienteRepository.findByCorreoIgnoreCase(normalizedEmail)
+                    .or(() -> clienteRepository.findByDocumento(normalizedUsername))
                     .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado."));
             return User.withUsername(cliente.getCorreo())
                     .password(cliente.getPasswordHash())
@@ -78,26 +92,19 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration configuration) throws Exception {
-        return configuration.getAuthenticationManager();
-    }
-
-    @Bean
-    public SecurityFilterChain securityFilterChain(
+    public SecurityFilterChain filterChain(
             HttpSecurity http,
             JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
+                .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> {})
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/h2-console/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/servicios", "/api/servicios/**")
                         .hasAnyRole("ADMIN", "CLIENTE")
                         .anyRequest().hasRole("ADMIN"))
-                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

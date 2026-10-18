@@ -17,9 +17,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
 
-    public AuthService(
-            AuthenticationManager authenticationManager,
-            JwtService jwtService) {
+    public AuthService(AuthenticationManager authenticationManager, JwtService jwtService) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
     }
@@ -42,7 +40,7 @@ public class AuthService {
                 ? authority.substring("ROLE_".length()).toLowerCase(Locale.ROOT)
                 : authority;
         String username = authentication.getName();
-        String token = jwtService.generateToken(username);
+        String token = jwtService.generateToken(username, authority);
 
         return new AuthResponse(token, username, role);
     }
