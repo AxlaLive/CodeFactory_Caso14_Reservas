@@ -65,6 +65,7 @@ export default function ProfessionalPage({
 
   return (
     <div className="admin-shell">
+      <a className="skip-link" href="#main-content">Saltar al contenido principal</a>
       <aside className="admin-sidebar">
         <div className="admin-brand">
           <span>✦</span>
@@ -78,27 +79,33 @@ export default function ProfessionalPage({
             <span>{session.specialty || "Profesional"}</span>
           </div>
         </div>
-        <nav>
+        <nav aria-label="Navegación principal">
           <span className="nav-title">Mi agenda</span>
           <button
+            type="button"
             className={view === "personal" ? "active" : ""}
+            aria-label="Agenda personal"
+            aria-current={view === "personal" ? "page" : undefined}
             onClick={() => setView("personal")}
           >
             ▦ <span>Agenda personal</span>
           </button>
           <button
+            type="button"
             className={view === "general" ? "active" : ""}
+            aria-label="Agenda general"
+            aria-current={view === "general" ? "page" : undefined}
             onClick={() => setView("general")}
           >
             ◱ <span>Agenda general</span>
           </button>
         </nav>
-        <button className="logout" onClick={onLogout}>
+        <button className="logout" type="button" onClick={onLogout}>
           ↪ Cerrar sesion
         </button>
       </aside>
 
-      <main className="admin-main">
+      <main className="admin-main" id="main-content" tabIndex="-1">
         <header className="admin-header">
           <div>
             <span className="eyebrow">
@@ -109,9 +116,6 @@ export default function ProfessionalPage({
             </h1>
           </div>
           <div className="header-profile">
-            <span className="header-status">
-              <span /> Sistema operativo
-            </span>
             <div className="profile-chip">
               <span className="profile-avatar">{initials}</span>
               <div>

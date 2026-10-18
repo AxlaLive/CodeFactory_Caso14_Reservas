@@ -82,6 +82,8 @@ class TrabajadorApiTest {
                                 """.formatted(receptionistUsername, receptionistPassword)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.role").value("receptionist"))
+                .andExpect(jsonPath("$.id").value(workerId))
+                .andExpect(jsonPath("$.name").value("María López"))
                 .andExpect(jsonPath("$.token").isNotEmpty())
                 .andReturn()
                 .getResponse()
@@ -99,13 +101,17 @@ class TrabajadorApiTest {
                 }
                 """.formatted(suffix.replaceAll("[^0-9]", "0"), suffix, suffix);
 
-        mockMvc.perform(post("/api/v1/trabajadores")
+        String professionalResponse = mockMvc.perform(post("/api/v1/trabajadores")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(professionalRequest))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.roleType").value("professional"))
-                .andExpect(jsonPath("$.specialty").value("Ortodoncista"));
+                .andExpect(jsonPath("$.specialty").value("Ortodoncista"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        long professionalId = objectMapper.readTree(professionalResponse).get("id").asLong();
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -113,7 +119,11 @@ class TrabajadorApiTest {
                                 {"username":"prof%s","password":"secure123"}
                                 """.formatted(suffix)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.role").value("professional"));
+                .andExpect(jsonPath("$.role").value("professional"))
+                .andExpect(jsonPath("$.id").value(professionalId))
+                .andExpect(jsonPath("$.name").value("Pablo Gómez"))
+                .andExpect(jsonPath("$.specialty").value("Ortodoncista"))
+                .andExpect(jsonPath("$.token").isNotEmpty());
 
         String receptionistToken = objectMapper.readTree(loginByUsername)
                 .get("token")

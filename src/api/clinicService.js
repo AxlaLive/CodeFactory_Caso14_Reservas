@@ -283,6 +283,28 @@ export const professionalService = {
   remove: async (id) => apiRequest(`/v1/profesionales/${id}`, { method: 'DELETE' }),
 }
 
+function mapWorker(item) {
+  return {
+    id: idString(item.id),
+    name: item.name,
+    roleType: item.roleType,
+    role: item.role,
+    specialty: item.specialty,
+    identification: item.identification,
+    email: item.email,
+    username: item.username,
+    active: item.active,
+  }
+}
+
+export const userService = {
+  list: async () => (await apiRequest('/v1/trabajadores')).map(mapWorker),
+  create: async (data) => mapWorker(await apiRequest('/v1/trabajadores', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })),
+}
+
 export const spaceService = {
   list: async () => (await apiRequest('/espacios')).map(mapSpace),
   create: async (data) => mapSpace(await apiRequest('/espacios', {
@@ -300,7 +322,9 @@ export const authService = {
     const session = {
       token: response.token,
       username: response.username,
-      name: response.username,
+      name: response.name || response.username,
+      id: idString(response.id),
+      specialty: response.specialty || '',
       role: response.role === 'ROLE_ADMIN' ? 'admin' : response.role,
     }
     window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
