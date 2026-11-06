@@ -17,12 +17,13 @@ El frontend usa `medicalRecordService` como adaptador de almacenamiento local mi
 - `POST /api/medical-records/{patientId}/treatments`
 - `POST /api/medical-records/{patientId}/notes`
 - `POST /api/medical-records/{patientId}/images` (multipart; JPEG, PNG, WEBP o GIF)
-- `POST /api/medical-records/{patientId}/prescriptions`
+- `POST /api/medical-records/{patientId}/prescriptions` guarda una receta con medicamento, dosis, frecuencia, duración, cantidad, vía e instrucciones.
+- Las decisiones sobre alertas farmacológicas se conservan como registros `prescriptionDecisions` dentro del expediente, asociadas a la receta y al profesional que las tomó.
 - `POST /api/medical-records/{patientId}/plans`
 - `PUT /api/medical-records/{patientId}/health-form` para la información registrada por el paciente.
 - `PUT /api/medical-records/{patientId}/{section}/{recordId}` para editar un registro.
 - `DELETE /api/medical-records/{patientId}/{section}/{recordId}` para eliminar un registro.
-- Todas las operaciones exigen el mismo JWT y comprobación de asignación activa a la cita. El servidor valida campos, MIME real/tamaño de imágenes y autoría; no se permite modificar el identificador del paciente o el profesional autor.
+- Todas las operaciones exigen el mismo JWT y comprobación de asignación activa a la cita. El servidor valida campos, MIME real/tamaño de imágenes y autoría; no se permite modificar el identificador del paciente o el profesional autor. El backend debe validar la autorización profesional, mantener el registro de decisión aunque se cancele una receta y no tratar las alertas automatizadas como diagnóstico definitivo.
 - Un registro incluye `id`, `date` y los campos propios de la sección. Los estados de pieza dental son `caries`, `restoration`, `absent`, `crown`, `crownNeeded`, `endodontics`, `endodonticsNeeded`, `sealant` e `implant`; las caras dentales son `M`, `D`, `V`, `L` y `O`.
 
 Al habilitar el backend se reemplaza el adaptador local sin cambiar la pantalla. El almacenamiento local demo no debe migrarse ni considerarse fuente clínica de producción.

@@ -67,8 +67,11 @@ function readImage(file) {
 
 export const medicalRecordContract = {
   version: 1,
-  sections: ['odontogram', 'treatments', 'notes', 'images', 'prescriptions', 'plans', 'healthForm'],
-  authorization: 'Bearer token + appointmentId asignada al profesional autenticado',
+  sections: ['odontogram', 'treatments', 'notes', 'images', 'prescriptions', 'prescriptionDecisions', 'plans', 'healthForm'],
+  authorization: 'Bearer token + appointmentId asignada al profesional autenticado; solo profesionales pueden emitir recetas',
+  prescriptionFields: ['medication', 'dosage', 'frequency', 'duration', 'quantity', 'route'],
+  prescriptionAlerts: 'Alertas de apoyo basadas en alergias registradas e interacciones conocidas; requieren evaluación profesional',
+  prescriptionAudit: 'Las decisiones de confirmar o cancelar alertas se conservan en la historia clínica',
   retention: 'Se conserva el historial completo, ordenado por fecha descendente',
 }
 
@@ -124,7 +127,7 @@ export const medicalRecordService = {
       ...medicalProfile,
     }
 
-    const sections = ['odontogram', 'treatments', 'notes', 'images', 'prescriptions', 'plans', 'healthForm']
+    const sections = ['odontogram', 'treatments', 'notes', 'images', 'prescriptions', 'prescriptionDecisions', 'plans', 'healthForm']
     const results = await Promise.allSettled(
       sections.map(async (section) => {
         await new Promise((resolve) => window.setTimeout(resolve, 180))
@@ -148,8 +151,21 @@ export const medicalRecordService = {
     return { profile, records, errors }
   },
 
-  async save(patientId, section, record) {
+  async save(patientId, section, record, session) {
+    if (['prescriptions', 'prescriptionDecisions'].includes(section)) {
+      if (session?.role !== 'professional' || !session.id) {
+        throw new Error('Solo un profesional autenticado puede registrar recetas o decisiones clínicas.')
+      }
+      if (section === 'prescriptions' && ['medication', 'dosage', 'frequency', 'duration', 'quantity', 'route'].some((field) => !String(record[field] ?? '').trim())) {
+        throw new Error('Completa medicamento, dosis, frecuencia, duración, cantidad y vía de administración.')
+      }
+    }
     const current = readSection(patientId, section)
+    if (['prescriptions', 'prescriptionDecisions'].includes(section)) {
+      if (record.id && !current.some((item) => item.id === record.id)) {
+        throw new Error('No tienes permiso para modificar este registro clínico.')
+      }
+    }
     const saved = {
       ...record,
       id: record.id || `${section}-${crypto.randomUUID()}`,
