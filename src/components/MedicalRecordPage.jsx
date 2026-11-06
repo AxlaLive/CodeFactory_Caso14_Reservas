@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { authService } from '../api/clinicService'
 import { medicalRecordService } from '../api/medicalRecordService'
+import PrescriptionPanel from './PrescriptionPanel'
 import TreatmentPlanPanel from './TreatmentPlanPanel'
 
 const TABS = [
@@ -8,6 +9,7 @@ const TABS = [
   ['history', 'Historia clínica'],
   ['notes', 'Notas clínicas'],
   ['images', 'Imágenes asociadas'],
+  ['prescriptions', 'Receta electrónica'],
 ]
 
 const TOOTH_NUMBERS = ['18', '17', '16', '15', '14', '13', '12', '11', '21', '22', '23', '24', '25', '26', '27', '28', '48', '47', '46', '45', '44', '43', '42', '41', '31', '32', '33', '34', '35', '36', '37', '38']
@@ -97,7 +99,7 @@ export default function MedicalRecordPage({ appointment, session, activeView, on
     try {
       const saved = section === 'images' && value.file
         ? await medicalRecordService.addImage(patientId, value.file, value.description)
-        : await medicalRecordService.save(patientId, section, value)
+        : await medicalRecordService.save(patientId, section, value, session)
       setRecords((current) => ({
         ...current,
         [section]: [saved, ...(current[section] || []).filter((item) => item.id !== saved.id)]
@@ -172,9 +174,10 @@ export default function MedicalRecordPage({ appointment, session, activeView, on
             <>
               {errors[activeTab] && <div className="medical-error" role="alert">{errors[activeTab]}</div>}
               {activeTab === 'summary' && <SummaryPanel profile={profile} records={records} onChangeView={onChangeView} onChangeTab={setActiveTab} />}
-              {activeTab === 'history' && <ClinicalHistoryPanel records={records} onAddTreatment={() => setEditing({ section: 'treatments' })} onAddPrescription={() => setEditing({ section: 'prescriptions' })} />}
+              {activeTab === 'history' && <ClinicalHistoryPanel records={records} onAddTreatment={() => setEditing({ section: 'treatments' })} onOpenPrescriptions={() => setActiveTab('prescriptions')} />}
               {activeTab === 'notes' && <ListPanel title="Notas clínicas" subtitle="Observaciones relevantes para la atención." items={records.notes || []} empty="Este paciente aún no tiene notas clínicas." onAdd={() => setEditing({ section: 'notes' })} onEdit={(item) => setEditing({ section: 'notes', item })} onDelete={(item) => removeRecord('notes', item)} renderItem={(item) => <p>{item.text}</p>} />}
               {activeTab === 'images' && <ImagePanel items={records.images || []} onAdd={(file, description) => saveRecord('images', { file, description })} onEdit={(item) => setEditing({ section: 'images', item })} onView={(item) => { setViewerError(false); setViewer(item) }} onDelete={(item) => removeRecord('images', item)} />}
+              {activeTab === 'prescriptions' && <PrescriptionPanel patientId={patientId} profile={profile} records={records} session={session} onSaved={(section, saved) => setRecords((current) => ({ ...current, [section]: [saved, ...(current[section] || [])].sort((a, b) => b.date.localeCompare(a.date)) }))} />}
               {activeTab !== 'summary' && <p className="medical-retention">Historial completo, ordenado del más reciente al más antiguo.</p>}
             </>
           )}
@@ -354,13 +357,14 @@ function SummaryPanel({ profile, records, onChangeView, onChangeTab }) {
   </div>
 }
 
-function ClinicalHistoryPanel({ records, onAddTreatment, onAddPrescription }) {
+function ClinicalHistoryPanel({ records, onAddTreatment, onOpenPrescriptions }) {
   const entries = [
     ...(records.odontogram || []).map((item) => ({ ...item, kind: 'Hallazgo odontológico', description: `Pieza ${item.tooth} · ${STATUS_LABELS[item.status] || item.status}${item.note ? ` · ${item.note}` : ''}` })),
     ...(records.treatments || []).map((item) => ({ ...item, kind: 'Tratamiento', description: [item.title, item.description].filter(Boolean).join(' · ') })),
     ...(records.notes || []).map((item) => ({ ...item, kind: 'Nota clínica', description: item.text })),
     ...(records.images || []).map((item) => ({ ...item, kind: 'Imagen asociada', description: item.description || item.name || 'Imagen añadida al expediente' })),
-    ...(records.prescriptions || []).map((item) => ({ ...item, kind: 'Receta clínica', description: `${item.medication || item.title}${item.dosage ? ` · ${item.dosage}` : ''}${item.instructions ? ` · ${item.instructions}` : ''}` })),
+    ...(records.prescriptions || []).map((item) => ({ ...item, kind: 'Receta electrónica', description: `${item.medication || item.title}${item.dosage ? ` · ${item.dosage}` : ''}${item.frequency ? ` · ${item.frequency}` : ''}${item.instructions ? ` · ${item.instructions}` : ''}` })),
+    ...(records.prescriptionDecisions || []).map((item) => ({ ...item, kind: 'Decisión de alerta farmacológica', description: `${item.decision === 'confirmed' ? 'Prescripción confirmada con alerta' : 'Prescripción cancelada por alerta'}: ${item.medication}. ${item.alerts?.join(' · ') || ''}` })),
     ...(records.plans || []).map((item) => {
       const procedures = item.phases?.flatMap((phase) => phase.procedures || []) || []
       const completed = procedures.filter((procedure) => procedure.completed).length
@@ -370,7 +374,7 @@ function ClinicalHistoryPanel({ records, onAddTreatment, onAddPrescription }) {
   ].sort((a, b) => (b.date || '').localeCompare(a.date || ''))
   return <div className="medical-panel">
     <SectionHeading title="Historia clínica" subtitle="Registro cronológico esencial de hallazgos, atenciones, recetas e imágenes." />
-    <div className="clinical-history-actions"><button type="button" className="secondary-button" onClick={onAddTreatment}>＋ Registrar tratamiento</button><button type="button" className="primary-button" onClick={onAddPrescription}>＋ Registrar receta</button></div>
+    <div className="clinical-history-actions"><button type="button" className="secondary-button" onClick={onAddTreatment}>＋ Registrar tratamiento</button><button type="button" className="primary-button" onClick={onOpenPrescriptions}>＋ Crear receta electrónica</button></div>
     {entries.length ? <div className="clinical-timeline">{entries.map((item) => <article className="clinical-timeline-item" key={`${item.kind}-${item.id}`}><span className="clinical-timeline-dot" /><time>{item.date ? formatDate(item.date) : 'Fecha no disponible'}</time><div><span>{item.kind}</span><p>{item.description || 'Sin detalle adicional.'}</p></div></article>)}</div> : <EmptyState text="La historia clínica aparecerá aquí a medida que se registren atenciones." />}
   </div>
 }

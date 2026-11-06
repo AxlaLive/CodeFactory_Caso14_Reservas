@@ -247,3 +247,47 @@
   .clinical-procedure-list article { grid-template-columns: 18px minmax(0,1fr) 50px 90px 24px; gap: 5px; }
   .clinical-history-actions { flex-wrap: wrap; }
 }
+
+.prescription-panel { min-height: 0; }
+.prescription-form { max-width: 920px; padding-top: 17px; }
+.prescription-template-label { display: flex; align-items: center; gap: 12px; padding: 13px 15px; border: 1px solid #dcebe1; border-radius: 8px; background: linear-gradient(110deg,#f1f8f3,#fbfdfb); }
+.prescription-template-label > span { display: grid; flex: 0 0 38px; width: 38px; height: 38px; place-items: center; border-radius: 11px; color: #237454; background: #dff1e5; font-size: 19px; }
+.prescription-template-label div { display: flex; flex-direction: column; gap: 4px; }
+.prescription-template-label strong { color: #365c4b; font-size: 11px; }
+.prescription-template-label small { color: #83948b; font-size: 9px; line-height: 1.5; }
+.prescription-form-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 13px; padding: 17px 0 5px; }
+.prescription-field { display: flex; min-width: 0; flex-direction: column; gap: 6px; color: #526a60; font-size: 10px; font-weight: 700; }
+.prescription-field.span-two { grid-column: span 2; }
+.prescription-field input, .prescription-field select, .prescription-field textarea { width: 100%; min-height: 39px; padding: 9px 11px; border: 1px solid #d9e5de; border-radius: 6px; outline: none; color: #314a40; background: #fff; font: 400 11px Manrope,sans-serif; }
+.prescription-field textarea { resize: vertical; }
+.prescription-field input:focus, .prescription-field select:focus, .prescription-field textarea:focus { border-color: #76b18b; box-shadow: 0 0 0 2px #e4f3e9; }
+.prescription-safety-note { padding: 10px 12px; border-left: 3px solid #84b895; color: #71877c; background: #f4f9f5; font-size: 9px; line-height: 1.55; }
+.prescription-submit { min-height: 40px; }
+.prescription-notice { color: #347b57; font-size: 11px; }
+.prescription-history { max-width: 920px; margin-top: 25px; border-top: 1px solid #e9efeb; }
+.prescription-history h3 { margin: 17px 0 7px; color: #405d50; font: 700 13px Manrope,sans-serif; }
+.prescription-empty { padding: 20px 10px; color: #84958c; font-size: 10px; text-align: center; }
+.prescription-history-item { display: grid; grid-template-columns: 105px minmax(0,1fr); gap: 14px; padding: 14px 5px; border-top: 1px solid #edf2ee; }
+.prescription-history-date { color: #82938b; font-size: 10px; }
+.prescription-history-item strong { color: #365c4b; font-size: 11px; }
+.prescription-history-item p { margin: 5px 0; color: #62786d; font-size: 10px; line-height: 1.5; }
+.prescription-history-item small { display: block; margin-top: 4px; color: #84958c; font-size: 9px; }
+.prescription-history-item .prescription-history-alert { color: #a44f40; font-weight: 700; }
+.prescription-alert-dialog { width: min(570px,94vw); }
+.prescription-alert-dialog > header { gap: 15px; }
+.prescription-alert-dialog > header h2 { line-height: 1.4; }
+.prescription-alert-list { display: grid; gap: 9px; }
+.prescription-alert { padding: 12px 14px; border: 1px solid #efc6bb; border-left: 4px solid #d66f51; border-radius: 7px; color: #874c3d; background: #fff5f1; }
+.prescription-alert-interaction { border-color: #eed8a8; border-left-color: #c18a2c; color: #785d2e; background: #fffbef; }
+.prescription-alert strong { font-size: 10px; }
+.prescription-alert p { margin: 4px 0 0; font-size: 10px; line-height: 1.55; }
+.prescription-confirm-copy { margin: 0; color: #71847a; font-size: 10px; line-height: 1.6; }
+.prescription-alert-dialog footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: auto; }
+.prescription-alert-dialog .secondary-button { min-height: 36px; padding: 0 12px; border: 1px solid #dfe9e2; border-radius: 5px; color: #6a8075; background: #fff; font-size: 10px; }
+@media (max-width: 720px) {
+  .prescription-form-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .prescription-field.span-two { grid-column: span 2; }
+  .prescription-history-item { grid-template-columns: minmax(0,1fr); gap: 5px; }
+  .prescription-alert-dialog footer { flex-direction: column-reverse; }
+  .prescription-alert-dialog footer button { width: 100%; min-height: 40px; }
+}
