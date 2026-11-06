@@ -278,3 +278,30 @@ button:disabled { cursor: not-allowed; opacity: .65; }
   .clinical-history-entry dl { grid-template-columns: 1fr; }
   .resource-actions { margin-left: 0; }
 }
+
+.clinical-sidebar { background: #174d3b; }
+.clinical-sidebar .admin-brand small,
+.clinical-sidebar .admin-user span,
+.clinical-sidebar .nav-title { color: #d3e8dc; }
+.clinical-sidebar nav button,
+.clinical-sidebar .logout { min-height: 48px; color: #fff; font-size: 16px; }
+.clinical-sidebar nav button.active,
+.clinical-sidebar nav button:hover,
+.clinical-sidebar .logout:hover { background: #28644d; }
+.clinical-sidebar .clinical-return { margin-top: 20px; border-top: 1px solid #d3e8dc; border-radius: 0; }
+.clinical-nav-icon { min-width: 22px; font-size: 19px; text-align: center; }
+
+.demo-access { padding-top: 20px; margin-top: 24px; border-top: 1px solid #d7e0da; }
+.demo-access h2 { margin: 0; color: #172e2b; font-size: 17px; }
+.demo-access p { margin: 7px 0 12px; color: #344a41; font-size: 13px; line-height: 1.5; }
+.demo-access-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.demo-access-options button { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 58px; padding: 9px 11px; border: 1px solid #8a9b91; border-radius: 6px; color: #172e2b; background: #fff; text-align: left; }
+.demo-access-options button:hover { border-color: #174d3b; background: #eaf6ed; }
+.demo-access-options strong { font-size: 13px; }
+.demo-access-options span,
+.demo-access > small { color: #344a41; font-size: 12px; }
+.demo-access > small { display: block; margin-top: 10px; }
+
+@media (max-width: 560px) {
+  .demo-access-options { grid-template-columns: 1fr; }
+}

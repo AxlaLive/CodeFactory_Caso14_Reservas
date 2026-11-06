@@ -1,3 +1,5 @@
+import { demoClinicService, demoSessionForCredentials, isDemoSession } from './demoClinicService'
+
 const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 ).replace(/\/+$/, '')
@@ -29,7 +31,10 @@ async function apiRequest(path, options = {}) {
 function readSession() {
   try {
     const session = JSON.parse(window.localStorage.getItem(AUTH_STORAGE_KEY) || 'null')
-    return session?.token ? session : null
+    const demoRoles = ['admin', 'professional', 'receptionist', 'client']
+    return session?.token || (session?.demoMode === true && demoRoles.includes(session.role))
+      ? session
+      : null
   } catch {
     return null
   }
@@ -37,6 +42,15 @@ function readSession() {
 
 function idString(id) {
   return id == null ? '' : String(id)
+}
+
+function mapRole(role) {
+  const normalized = String(role || '').replace(/^ROLE_/i, '').toLowerCase()
+  if (['admin', 'administrador'].includes(normalized)) return 'admin'
+  if (['client', 'cliente', 'patient', 'paciente'].includes(normalized)) return 'client'
+  if (['professional', 'profesional'].includes(normalized)) return 'professional'
+  if (['receptionist', 'recepcionista'].includes(normalized)) return 'receptionist'
+  return normalized
 }
 
 function mapProfessional(item) {
@@ -249,8 +263,11 @@ export function findAppointmentType(specialty, typeId) {
 export const SPECIALTIES = SPECIALTY_TYPES
 
 export const blockService = {
-  list: async () => (await apiRequest('/disponibilidades')).map(mapBlock),
+  list: async () => isDemoSession()
+    ? demoClinicService.blocks.list()
+    : (await apiRequest('/disponibilidades')).map(mapBlock),
   save: async (block) => {
+    if (isDemoSession()) return demoClinicService.blocks.save(block)
     const existingId = /^\d+$/.test(String(block.id || '')) ? block.id : null
     const saved = await apiRequest(existingId ? `/disponibilidades/${existingId}` : '/disponibilidades', {
       method: existingId ? 'PUT' : 'POST',
@@ -258,21 +275,31 @@ export const blockService = {
     })
     return mapBlock(saved)
   },
-  remove: async (id) => apiRequest(`/disponibilidades/${id}`, { method: 'DELETE' }),
+  remove: async (id) => isDemoSession()
+    ? demoClinicService.blocks.remove(id)
+    : apiRequest(`/disponibilidades/${id}`, { method: 'DELETE' }),
 }
 
 export const appointmentService = {
   list: async () => {
+    if (isDemoSession()) return demoClinicService.appointments.list()
     const params = new URLSearchParams({ inicio: '1900-01-01', fin: '9999-12-31' })
     return (await apiRequest(`/citas/rango?${params}`)).map(mapAppointment)
   },
-  save: saveAppointment,
-  cancel: async (id) => mapAppointment(await apiRequest(`/citas/${id}/cancelar`, { method: 'PATCH' })),
+  save: async (appointment) => isDemoSession()
+    ? demoClinicService.appointments.save(appointment)
+    : saveAppointment(appointment),
+  cancel: async (id) => isDemoSession()
+    ? demoClinicService.appointments.cancel(id)
+    : mapAppointment(await apiRequest(`/citas/${id}/cancelar`, { method: 'PATCH' })),
 }
 
 export const professionalService = {
-  list: async () => (await apiRequest('/v1/profesionales')).map(mapProfessional),
+  list: async () => isDemoSession()
+    ? demoClinicService.professionals.list()
+    : (await apiRequest('/v1/profesionales')).map(mapProfessional),
   create: async (data) => {
+    if (isDemoSession()) return demoClinicService.professionals.create(data)
     const [nombre, ...apellidos] = data.name.trim().split(/\s+/)
     const created = await apiRequest('/v1/profesionales', {
       method: 'POST',
@@ -288,6 +315,7 @@ export const professionalService = {
     return mapProfessional(created)
   },
   update: async (id, changes) => {
+    if (isDemoSession()) return demoClinicService.professionals.update(id, changes)
     const current = await apiRequest(`/v1/profesionales/${id}`)
     const updated = await apiRequest(`/v1/profesionales/${id}`, {
       method: 'PUT',
@@ -306,6 +334,7 @@ export const professionalService = {
     return mapProfessional(updated)
   },
   remove: async (id) => {
+    if (isDemoSession()) return demoClinicService.professionals.remove(id)
     const response = await apiRequest(`/v1/profesionales/${id}`, { method: 'DELETE' })
     return response ? mapProfessional(response) : null
   },
@@ -326,36 +355,51 @@ function mapWorker(item) {
 }
 
 export const userService = {
-  list: async () => (await apiRequest('/v1/trabajadores')).map(mapWorker),
-  create: async (data) => mapWorker(await apiRequest('/v1/trabajadores', {
+  list: async () => isDemoSession()
+    ? demoClinicService.users.list()
+    : (await apiRequest('/v1/trabajadores')).map(mapWorker),
+  create: async (data) => isDemoSession()
+    ? demoClinicService.users.create(data)
+    : mapWorker(await apiRequest('/v1/trabajadores', {
     method: 'POST',
     body: JSON.stringify(data),
-  })),
+    })),
 }
 
 export const spaceService = {
-  list: async () => (await apiRequest('/espacios')).map(mapSpace),
-  create: async (data) => mapSpace(await apiRequest('/espacios', {
+  list: async () => isDemoSession()
+    ? demoClinicService.spaces.list()
+    : (await apiRequest('/espacios')).map(mapSpace),
+  create: async (data) => isDemoSession()
+    ? demoClinicService.spaces.create(data)
+    : mapSpace(await apiRequest('/espacios', {
     method: 'POST',
     body: JSON.stringify({ nombre: data.name, tipo: data.type, activo: true }),
-  })),
-  update: async (id, data) => mapSpace(await apiRequest(`/espacios/${id}`, {
+    })),
+  update: async (id, data) => isDemoSession()
+    ? demoClinicService.spaces.update(id, data)
+    : mapSpace(await apiRequest(`/espacios/${id}`, {
     method: 'PUT',
     body: JSON.stringify({
       nombre: data.name,
       tipo: data.type,
       activo: data.active !== false,
     }),
-  })),
+    })),
   remove: async (id) => {
+    if (isDemoSession()) return demoClinicService.spaces.remove(id)
     const response = await apiRequest(`/espacios/${id}`, { method: 'DELETE' })
     return response ? mapSpace(response) : null
   },
 }
 
 export const patientService = {
-  list: async () => (await apiRequest('/pacientes')).map(mapPatient),
-  create: async (data) => mapPatient(await apiRequest('/pacientes', {
+  list: async () => isDemoSession()
+    ? demoClinicService.patients.list()
+    : (await apiRequest('/pacientes')).map(mapPatient),
+  create: async (data) => isDemoSession()
+    ? demoClinicService.patients.create(data)
+    : mapPatient(await apiRequest('/pacientes', {
     method: 'POST',
     body: JSON.stringify({
       nombre: data.name.trim(),
@@ -364,19 +408,29 @@ export const patientService = {
       correo: data.email.trim() || null,
       activo: true,
     }),
-  })),
+    })),
 }
 
 export const clinicalHistoryService = {
-  list: async (patientId) => apiRequest(`/v1/pacientes/${patientId}/historia-clinica`),
-  create: async (patientId, data) => apiRequest(`/v1/pacientes/${patientId}/historia-clinica`, {
+  list: async (patientId) => isDemoSession()
+    ? demoClinicService.histories.list(patientId)
+    : apiRequest(`/v1/pacientes/${patientId}/historia-clinica`),
+  create: async (patientId, data) => isDemoSession()
+    ? demoClinicService.histories.create(patientId, data)
+    : apiRequest(`/v1/pacientes/${patientId}/historia-clinica`, {
     method: 'POST',
     body: JSON.stringify(data),
-  }),
+    }),
 }
 
 export const authService = {
   login: async ({ username, password }) => {
+    const demoSession = demoSessionForCredentials(username, password)
+    if (demoSession) {
+      window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(demoSession))
+      return demoSession
+    }
+
     const response = await apiRequest('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ username: username.trim(), password }),
@@ -385,13 +439,37 @@ export const authService = {
       token: response.token,
       username: response.username,
       name: response.name || response.username,
-      id: idString(response.id),
+      id: idString(response.id ?? response.username),
+      email: response.email || (String(response.username || '').includes('@') ? response.username : ''),
       specialty: response.specialty || '',
-      role: response.role === 'ROLE_ADMIN' ? 'admin' : response.role,
+      role: mapRole(response.role),
     }
     window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
     return session
   },
+  updateCustomer: async (id, changes) => {
+    if (!isDemoSession()) throw new Error('La edición del perfil de paciente aún no está conectada al servidor.')
+    const session = await demoClinicService.updateCustomer(id, changes)
+    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
+    return session
+  },
   session: readSession,
+  isTokenExpired: () => {
+    const session = readSession()
+    if (!session?.token) return false
+    const payload = session.token.split('.')[1]
+    if (!payload) throw new Error('La sesión no contiene un token válido.')
+
+    try {
+      const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/')
+        .padEnd(Math.ceil(payload.length / 4) * 4, '=')
+      const claims = JSON.parse(window.atob(normalizedPayload))
+      if (!Number.isFinite(claims.exp)) throw new Error('El token no contiene una fecha de expiración válida.')
+      return Date.now() >= claims.exp * 1000
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('expiración')) throw error
+      throw new Error('No se pudo validar la expiración de la sesión.')
+    }
+  },
   logout: () => window.localStorage.removeItem(AUTH_STORAGE_KEY),
 }
