@@ -1,7 +1,6 @@
 import { appointmentService } from './clinicService'
 
 const STORAGE_PREFIX = 'dentia-medical-record-v1'
-const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
 const seed = {
@@ -47,16 +46,6 @@ function readSection(patientId, section) {
   }
 }
 
-function recentOnly(items) {
-  const cutoff = Date.now() - ONE_YEAR_MS
-  return items
-    .filter((item) => {
-      const timestamp = new Date(`${item.date}T00:00:00`).getTime()
-      return Number.isFinite(timestamp) && timestamp >= cutoff
-    })
-    .sort((a, b) => b.date.localeCompare(a.date))
-}
-
 function assertImage(file) {
   if (!IMAGE_TYPES.includes(file.type)) {
     throw new Error('El archivo debe ser una imagen JPEG, PNG, WEBP o GIF.')
@@ -78,12 +67,17 @@ function readImage(file) {
 
 export const medicalRecordContract = {
   version: 1,
-  sections: ['odontogram', 'treatments', 'notes', 'images'],
+  sections: ['odontogram', 'treatments', 'notes', 'images', 'prescriptions', 'plans', 'healthForm'],
   authorization: 'Bearer token + appointmentId asignada al profesional autenticado',
-  retention: 'Cada lectura inicial limita los registros a los últimos 365 días',
+  retention: 'Se conserva el historial completo, ordenado por fecha descendente',
 }
 
 export const medicalRecordService = {
+  async loadPatientHealthForm(patientId) {
+    const records = readSection(patientId, 'healthForm')
+    return records[0] || null
+  },
+
   async load(appointment, session) {
     if (session?.role !== 'professional' || !session.id) {
       throw new Error('Solo un profesional puede consultar el expediente clínico.')
@@ -130,11 +124,11 @@ export const medicalRecordService = {
       ...medicalProfile,
     }
 
-    const sections = ['odontogram', 'treatments', 'notes', 'images']
+    const sections = ['odontogram', 'treatments', 'notes', 'images', 'prescriptions', 'plans', 'healthForm']
     const results = await Promise.allSettled(
       sections.map(async (section) => {
         await new Promise((resolve) => window.setTimeout(resolve, 180))
-        return [section, recentOnly(readSection(appointment.patientId, section))]
+        return [section, readSection(appointment.patientId, section).sort((a, b) => b.date.localeCompare(a.date))]
       }),
     )
 
@@ -165,6 +159,20 @@ export const medicalRecordService = {
       ? current.map((item) => item.id === saved.id ? saved : item)
       : [saved, ...current]
     window.localStorage.setItem(storageKey(patientId, section), JSON.stringify(next))
+    return saved
+  },
+
+  async savePatientHealthForm(patientId, form) {
+    const saved = await this.save(patientId, 'healthForm', form)
+    const profile = readSection(patientId, 'profile')
+    window.localStorage.setItem(storageKey(patientId, 'profile'), JSON.stringify({
+      ...profile,
+      allergies: form.allergies || [],
+      conditions: form.conditions || [],
+      medications: form.medications || [],
+      consent: form.consent,
+      healthFormUpdatedAt: saved.date,
+    }))
     return saved
   },
 

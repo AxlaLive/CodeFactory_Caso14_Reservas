@@ -126,3 +126,27 @@
 
 /* --- Formulario de bloqueo y utilidades --- */
 .block-form { width: min(100%, 520px); }
+
+.admin-sidebar nav button { font-size: 14px; }
+.admin-sidebar nav button .clinical-nav-icon { display: grid; flex: 0 0 23px; place-items: center; width: 23px; height: 23px; font-size: 19px; line-height: 1; }
+.admin-sidebar.clinical-sidebar { width: 268px; flex: 0 0 268px; padding: 28px 18px 22px; background: #123f3b; }
+.clinical-sidebar .admin-brand { padding-bottom: 28px; font-size: 25px; }
+.clinical-sidebar .admin-brand span { width: 38px; height: 38px; font-size: 25px; }
+.clinical-sidebar .admin-brand small { font-size: 9px; }
+.clinical-sidebar .admin-user { margin-bottom: 22px; padding: 15px 13px; border-color: rgba(255,255,255,.15); }
+.clinical-sidebar .admin-user > b { width: 39px; height: 39px; font-size: 12px; }
+.clinical-sidebar .admin-user strong { font-size: 13px; }
+.clinical-sidebar .admin-user span { font-size: 11px; }
+.clinical-sidebar .nav-title { padding-top: 16px; color: #97b2ab; font-size: 10px; }
+.clinical-sidebar nav button { padding: 12px 13px; border-radius: 9px; color: #e0ebe8; font-size: 14px; }
+.clinical-sidebar nav button.active { background: #285c52; box-shadow: inset 3px 0 #7fd0ae; }
+.clinical-sidebar .clinical-return { margin-top: 20px; border-top: 1px solid rgba(255,255,255,.17); border-radius: 0; padding-top: 18px; color: #b7ccc4; }
+.clinical-sidebar .logout { border-color: rgba(255,255,255,.17); }
+.clinical-sidebar + .admin-main .admin-content { padding-top: 24px; }
+@media (max-width: 760px) {
+  .admin-sidebar.clinical-sidebar { width: auto; flex-basis: auto; padding: 12px 14px; }
+  .clinical-sidebar .admin-user, .clinical-sidebar .clinical-return { display: none; }
+  .clinical-sidebar nav { display: flex; gap: 5px; overflow-x: auto; }
+  .clinical-sidebar nav button { flex: 0 0 auto; width: auto; padding: 9px 10px; font-size: 11px; }
+  .clinical-sidebar nav button .clinical-nav-icon { flex-basis: auto; width: auto; font-size: 16px; }
+}

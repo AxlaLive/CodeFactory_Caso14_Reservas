@@ -6,13 +6,14 @@ import {
   professionalService,
   spaceService,
 } from '../api/clinicService'
+import { medicalRecordService } from '../api/medicalRecordService'
 import { DAY_END, addMinutes, findBlockConflict, findConflict, formatLongDate, getSlotAvailability, getTimeOptions, toDateKey } from '../utils/agenda'
 import '../styles/client.css'
 
 const navigation = [
   { id: 'appointments', icon: '▦', label: 'Mis citas' },
   { id: 'profile', icon: '♙', label: 'Datos personales' },
-  { id: 'forms', icon: '☑', label: 'Formularios' },
+  { id: 'forms', icon: '☑', label: 'Formulario de salud' },
   { id: 'payments', icon: '$', label: 'Pagos' },
   { id: 'messages', icon: '✉', label: 'Comunicación' },
 ]
@@ -35,7 +36,7 @@ export default function ClientPage({ session, onUpdateSession, onLogout }) {
   const [notice, setNotice] = useState('')
   const [booking, setBooking] = useState(null)
   const [profile, setProfile] = useState({ name: session.name, phone: session.phone, address: session.address, emergencyContact: session.emergencyContact })
-  const [medicalForm, setMedicalForm] = useState(() => readPortalStorage(FORM_STORAGE_KEY, {})[session.id] || emptyMedicalForm())
+  const [medicalForm, setMedicalForm] = useState(() => normalizeMedicalForm(readPortalStorage(FORM_STORAGE_KEY, {})[session.id] || emptyMedicalForm()))
   const [messages, setMessages] = useState(() => readPortalStorage(MESSAGE_STORAGE_KEY, {})[session.id] || [])
   const [messageText, setMessageText] = useState('')
   const [attachment, setAttachment] = useState(null)
@@ -62,6 +63,16 @@ export default function ClientPage({ session, onUpdateSession, onLogout }) {
     })
     return () => { mounted = false }
   }, [])
+
+  useEffect(() => {
+    let active = true
+    medicalRecordService.loadPatientHealthForm(session.identification).then((form) => {
+      if (active && form) setMedicalForm(normalizeMedicalForm(form))
+    }).catch((error) => {
+      if (active) setPageError(`No fue posible cargar el formulario de salud: ${error.message}`)
+    })
+    return () => { active = false }
+  }, [session.identification])
 
   const myAppointments = appointments.filter((item) =>
     item.clientId === session.id ||
@@ -90,36 +101,48 @@ export default function ClientPage({ session, onUpdateSession, onLogout }) {
       id: appointment?.id || '',
       date: appointment?.date || '',
       startTime: appointment?.startTime || '',
-      professionalId: appointment?.professionalId || professionals[0].id,
-      spaceId: appointment?.spaceId || spaces[0].id,
       notes: appointment?.notes || '',
     })
   }
 
-  const selectedProfessional = professionals.find((item) => item.id === booking?.professionalId)
-  const selectedSpace = spaces.find((item) => item.id === booking?.spaceId)
-  const availableSlots = useMemo(() => {
-    if (!booking?.date || !selectedProfessional || !selectedSpace) return []
-    const options = getTimeOptions(30).filter((time) => timeToMinutes(time) + VISIT_DURATION <= DAY_END)
-    const slots = getSlotAvailability({
-      date: booking.date,
-      options,
-      duration: VISIT_DURATION,
-      buffer: 0,
-      professionalId: selectedProfessional.id,
-      spaceId: selectedSpace.id,
-      excludeId: booking.id || undefined,
-    }, appointments, blocks).filter((slot) => slot.available)
-    if (booking.date !== toDateKey(new Date())) return slots
+  const bookingTimes = useMemo(
+    () => getTimeOptions(30).filter((time) => timeToMinutes(time) + VISIT_DURATION <= DAY_END),
+    [],
+  )
+  const candidateSlots = useMemo(() => {
+    if (!booking?.date) return []
     const now = new Date()
     const currentTime = now.getHours() * 60 + now.getMinutes()
-    return slots.filter((slot) => timeToMinutes(slot.time) > currentTime)
-  }, [booking, selectedProfessional, selectedSpace, appointments, blocks])
+    return professionals.map((professional) => {
+      const bySpace = spaces.map((space) => ({
+        space,
+        slots: getSlotAvailability({
+          date: booking.date,
+          options: bookingTimes,
+          duration: VISIT_DURATION,
+          buffer: 0,
+          professionalId: professional.id,
+          spaceId: space.id,
+          excludeId: booking.id || undefined,
+        }, appointments, blocks),
+      }))
+      const slots = bookingTimes.map((time) => ({
+        time,
+        spaces: bySpace.filter(({ slots: options }) => options.some((slot) => slot.time === time && slot.available)).map(({ space }) => space),
+      })).filter((slot) => slot.spaces.length && (booking.date !== toDateKey(now) || timeToMinutes(slot.time) > currentTime))
+      const remainingSlots = bookingTimes.filter((time) => booking.date !== toDateKey(now) || timeToMinutes(time) > currentTime).length
+      const utilization = remainingSlots ? 1 - slots.length / remainingSlots : 1
+      return { professional, slots, overloaded: utilization >= 0.8 }
+    }).filter((candidate) => !candidate.overloaded && candidate.slots.length)
+  }, [booking, professionals, spaces, bookingTimes, appointments, blocks])
+  const availableSlots = useMemo(() => [...new Set(candidateSlots.flatMap((candidate) => candidate.slots.map((slot) => slot.time)))]
+    .sort((a, b) => timeToMinutes(a) - timeToMinutes(b))
+    .map((time) => ({ time })), [candidateSlots])
 
   const saveBooking = async (event) => {
     event.preventDefault()
-    if (!booking?.date || !booking.startTime || !selectedProfessional || !selectedSpace) {
-      setPageError('Selecciona un odontólogo general, una fecha y una hora disponible.')
+    if (!booking?.date || !booking.startTime) {
+      setPageError('Selecciona una fecha y una hora disponible.')
       return
     }
     if (booking.date < toDateKey(new Date())) {
@@ -130,6 +153,15 @@ export default function ClientPage({ session, onUpdateSession, onLogout }) {
       setPageError('Ese horario ya no está disponible. Elige una de las horas mostradas.')
       return
     }
+    const assignments = candidateSlots.flatMap((candidate) => {
+      const slot = candidate.slots.find((item) => item.time === booking.startTime)
+      return slot ? slot.spaces.map((space) => ({ professional: candidate.professional, space })) : []
+    })
+    if (!assignments.length) {
+      setPageError('Ese horario ya no está disponible. Elige otra hora.')
+      return
+    }
+    const { professional: selectedProfessional, space: selectedSpace } = assignments[Math.floor(Math.random() * assignments.length)]
     const endTime = addMinutes(booking.startTime, VISIT_DURATION)
     const conflict = findConflict({
       date: booking.date,
@@ -219,15 +251,17 @@ export default function ClientPage({ session, onUpdateSession, onLogout }) {
     }
   }
 
-  const saveMedicalForm = (event) => {
+  const saveMedicalForm = async (event) => {
     event.preventDefault()
-    event.preventDefault()
+    setBusy(true)
+    setPageError('')
     try {
-      const stored = readPortalStorage(FORM_STORAGE_KEY, {})
-      writePortalStorage(FORM_STORAGE_KEY, { ...stored, [session.id]: medicalForm })
-      notify('Tu formulario de salud quedó guardado en este navegador.')
+      await medicalRecordService.savePatientHealthForm(session.identification, medicalForm)
+      notify('Tu formulario quedó actualizado y disponible para el profesional.')
     } catch (error) {
       setPageError(`No fue posible guardar el formulario: ${error.message}`)
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -275,13 +309,13 @@ export default function ClientPage({ session, onUpdateSession, onLogout }) {
           {loading ? <div className="client-card client-loading">Cargando tu portal…</div> : <>
             {view === 'appointments' && <AppointmentsView appointments={upcomingAppointments} history={historyAppointments} onBook={() => startBooking()} onReschedule={startBooking} onCancel={cancelAppointment} />}
             {view === 'profile' && <ProfileView session={session} profile={profile} onChange={(field, value) => setProfile((current) => ({ ...current, [field]: value }))} onSubmit={saveProfile} busy={busy} />}
-            {view === 'forms' && <MedicalForm value={medicalForm} onChange={(field, value) => setMedicalForm((current) => ({ ...current, [field]: value }))} onSubmit={saveMedicalForm} />}
+            {view === 'forms' && <MedicalForm value={medicalForm} onChange={(field, value) => setMedicalForm((current) => ({ ...current, [field]: value }))} onSubmit={saveMedicalForm} busy={busy} />}
             {view === 'payments' && <PaymentsView appointments={payableAppointments} />}
             {view === 'messages' && <MessagesView messages={messages} text={messageText} attachment={attachment} onText={setMessageText} onAttachment={setAttachment} onSubmit={submitMessage} />}
           </>}
         </div>
       </main>
-      {booking && <BookingDialog booking={booking} professionals={professionals} spaces={spaces} slots={availableSlots} busy={busy} onChange={(field, value) => setBooking((current) => ({ ...current, [field]: value, ...(field === 'date' ? { startTime: '' } : {}) }))} onSubmit={saveBooking} onClose={() => setBooking(null)} />}
+      {booking && <BookingDialog booking={booking} slots={availableSlots} busy={busy} onChange={(field, value) => setBooking((current) => ({ ...current, [field]: value, ...(field === 'date' ? { startTime: '' } : {}) }))} onSubmit={saveBooking} onClose={() => setBooking(null)} />}
     </div>
   )
 }
@@ -303,11 +337,11 @@ function AppointmentsView({ appointments, history, onBook, onReschedule, onCance
   </>
 }
 
-function BookingDialog({ booking, professionals, spaces, slots, busy, onChange, onSubmit, onClose }) {
-  return <div className="client-dialog-backdrop" onMouseDown={onClose}><form className="client-dialog" onSubmit={onSubmit} onMouseDown={(event) => event.stopPropagation()}>
+function BookingDialog({ booking, slots, busy, onChange, onSubmit, onClose }) {
+  return <div className="client-dialog-backdrop" onMouseDown={onClose}><form className="client-dialog client-booking-dialog" onSubmit={onSubmit} onMouseDown={(event) => event.stopPropagation()}>
     <header><div><span className="eyebrow">{booking.id ? 'Gestiona tu cita' : 'Nueva reserva'}</span><h2>{booking.id ? 'Reprogramar cita' : 'Reserva tu cita'}</h2></div><button type="button" className="dialog-close" onClick={onClose} aria-label="Cerrar">×</button></header>
     <p className="booking-type"><span>✦</span><span><strong>Odontología general</strong><small>Consulta general · 30 minutos</small></span><b>{formatMoney(GENERAL_APPOINTMENT_PRICE)}</b></p>
-    <label className="client-field">Odontólogo general<select value={booking.professionalId} onChange={(event) => onChange('professionalId', event.target.value)} required>{professionals.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+    <div className="client-assignment-note"><span>✦</span><div><strong>Asignación automática</strong><small>Te asignaremos un odontólogo general con disponibilidad.</small></div></div>
     <label className="client-field">Fecha<input type="date" min={toDateKey(new Date())} value={booking.date} onChange={(event) => onChange('date', event.target.value)} required /></label>
     {booking.date && <fieldset className="client-time-picker"><legend>Horarios disponibles</legend>{slots.length ? <div>{slots.map((slot) => <button type="button" key={slot.time} className={booking.startTime === slot.time ? 'selected' : ''} onClick={() => onChange('startTime', slot.time)}>{slot.time}</button>)}</div> : <p>No hay horarios disponibles para esta fecha. Prueba con otro día.</p>}</fieldset>}
     <label className="client-field">Motivo de consulta (opcional)<textarea rows="3" value={booking.notes} onChange={(event) => onChange('notes', event.target.value)} placeholder="Cuéntanos brevemente el motivo de tu visita" /></label>
@@ -331,15 +365,42 @@ function ProfileView({ session, profile, onChange, onSubmit, busy }) {
   </section>
 }
 
-function MedicalForm({ value, onChange, onSubmit }) {
-  return <section className="client-card client-panel"><div className="client-section-heading"><div><span className="eyebrow">Antes de tu consulta</span><h2>Formulario de salud</h2></div><span className="profile-card-icon">☑</span></div><p className="client-description">Comparte información relevante para que el equipo pueda prepararse para tu visita.</p>
-    <form className="client-medical-form" onSubmit={onSubmit}>
-      <label className="client-field">Antecedentes de salud<textarea rows="3" value={value.history} onChange={(event) => onChange('history', event.target.value)} placeholder="Enfermedades o antecedentes que quieras mencionar" /></label>
-      <label className="client-field">Alergias<textarea rows="2" value={value.allergies} onChange={(event) => onChange('allergies', event.target.value)} placeholder="Medicamentos, alimentos u otras alergias" /></label>
-      <label className="client-field">Medicamentos actuales<textarea rows="2" value={value.medications} onChange={(event) => onChange('medications', event.target.value)} placeholder="Nombre y dosis, si aplica" /></label>
-      <label className="client-check"><input type="checkbox" checked={value.consent} onChange={(event) => onChange('consent', event.target.checked)} required /><span>Confirmo que la información es correcta y autorizo su uso para la preparación de mi atención odontológica.</span></label>
-      <p className="client-disclaimer">Formulario de demostración: la información se almacena solo en este navegador y no se envía al equipo clínico.</p>
-      <button className="client-primary" type="submit">Guardar formulario</button>
+function MedicalForm({ value, onChange, onSubmit, busy }) {
+  const [allergyInput, setAllergyInput] = useState('')
+  const conditions = ['Hipertensión', 'Diabetes', 'Asma', 'Enfermedad cardíaca', 'Problemas de coagulación', 'Ninguna de las anteriores']
+  const addAllergy = () => {
+    const allergy = allergyInput.trim()
+    if (allergy && !value.allergies.includes(allergy)) onChange('allergies', [...value.allergies, allergy])
+    setAllergyInput('')
+  }
+  const updateMedication = (index, field, next) => onChange('medications', value.medications.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: next } : item))
+  const toggleCondition = (condition) => {
+    if (condition === 'Ninguna de las anteriores') {
+      onChange('conditions', value.conditions.includes(condition) ? [] : [condition])
+      return
+    }
+    const selected = value.conditions.filter((item) => item !== 'Ninguna de las anteriores')
+    onChange('conditions', selected.includes(condition) ? selected.filter((item) => item !== condition) : [...selected, condition])
+  }
+  const completion = [value.conditions.length > 0, value.allergies.length > 0, value.medications.length > 0, value.consent].filter(Boolean).length * 25
+  return <section className="client-card client-panel health-form-panel">
+    <div className="client-section-heading"><div><span className="eyebrow">MI INFORMACIÓN MÉDICA</span><h2>Formulario de salud</h2><p>Ayúdanos a preparar una atención segura y personalizada.</p></div><div className="health-completion"><strong>{completion}%</strong><span>Completado</span></div></div>
+    <div className="health-info-banner"><strong>Tu salud es importante</strong><p>Esta información es confidencial y estará disponible para el profesional que te atienda.</p></div>
+    <form className="client-medical-form health-form" onSubmit={onSubmit}>
+      <section className="health-form-section"><div className="health-form-title"><span>01</span><div><h3>Antecedentes médicos</h3><p>Selecciona las condiciones que tengas o hayas tenido.</p></div></div>
+        <div className="health-condition-grid">{conditions.map((condition) => <label key={condition} className={value.conditions.includes(condition) ? 'selected' : ''}><input type="checkbox" checked={value.conditions.includes(condition)} onChange={() => toggleCondition(condition)} /><span>✓</span>{condition}</label>)}</div>
+        <label className="client-field">Otros antecedentes<textarea rows="2" value={value.history} onChange={(event) => onChange('history', event.target.value)} placeholder="Incluye cualquier otro antecedente relevante" /></label>
+      </section>
+      <section className="health-form-section"><div className="health-form-title"><span>02</span><div><h3>Alergias</h3><p>Indica medicamentos, alimentos o materiales.</p></div></div>
+        <div className="health-allergy-input">{value.allergies.map((allergy) => <span key={allergy}>{allergy}<button type="button" onClick={() => onChange('allergies', value.allergies.filter((item) => item !== allergy))} aria-label={`Quitar ${allergy}`}>×</button></span>)}<input value={allergyInput} onChange={(event) => setAllergyInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addAllergy() } }} placeholder="Añadir alergia conocida" /><button type="button" className="health-add-tag" onClick={addAllergy}>Añadir</button></div>
+        <p className="health-warning-helper">⚠ Las alergias registradas generarán una alerta visible para tu profesional.</p>
+      </section>
+      <section className="health-form-section"><div className="health-form-title"><span>03</span><div><h3>Medicamentos actuales</h3><p>Incluye nombre, dosis y frecuencia.</p></div></div>
+        {value.medications.map((item, index) => <div className="health-medication-row" key={item.id || index}><input aria-label="Medicamento" value={item.name} onChange={(event) => updateMedication(index, 'name', event.target.value)} placeholder="Nombre" /><input aria-label="Dosis" value={item.dosage} onChange={(event) => updateMedication(index, 'dosage', event.target.value)} placeholder="Dosis" /><input aria-label="Frecuencia" value={item.frequency} onChange={(event) => updateMedication(index, 'frequency', event.target.value)} placeholder="Frecuencia" /><button type="button" onClick={() => onChange('medications', value.medications.filter((_, itemIndex) => itemIndex !== index))} aria-label="Eliminar medicamento">×</button></div>)}
+        <button type="button" className="health-add-medication" onClick={() => onChange('medications', [...value.medications, { id: `med-${Date.now()}`, name: '', dosage: '', frequency: '' }])}>＋ Añadir medicamento</button>
+      </section>
+      <label className={`health-consent ${value.consent ? 'accepted' : ''}`}><input type="checkbox" checked={value.consent} onChange={(event) => onChange('consent', event.target.checked)} required /><span>✓</span><div><strong>Autorizo el tratamiento de mis datos de salud</strong><p>Declaro que la información es veraz y autorizo su uso para fines de atención clínica.</p></div></label>
+      <div className="health-form-footer"><span>🔒 La información se comparte con tu profesional clínico.</span><button className="client-primary" type="submit" disabled={busy || !value.consent}>{busy ? 'Guardando…' : 'Guardar formulario'}</button></div>
     </form>
   </section>
 }
@@ -357,7 +418,22 @@ function MessagesView({ messages, text, attachment, onText, onAttachment, onSubm
 }
 
 function emptyMedicalForm() {
-  return { history: '', allergies: '', medications: '', consent: false }
+  return { history: '', conditions: [], allergies: [], medications: [], consent: false }
+}
+
+function normalizeMedicalForm(form) {
+  const allergyList = Array.isArray(form.allergies)
+    ? form.allergies
+    : String(form.allergies || '').split(',').map((item) => item.trim()).filter(Boolean)
+  const medicationList = Array.isArray(form.medications)
+    ? form.medications.map((item, index) => typeof item === 'string'
+      ? { id: `med-${index}`, name: item, dosage: '', frequency: '' }
+      : { id: item.id || `med-${index}`, name: item.name || '', dosage: item.dosage || '', frequency: item.frequency || '' })
+    : String(form.medications || '').split(',').map((name, index) => name.trim()).filter(Boolean).map((name, index) => ({ id: `med-${index}`, name, dosage: '', frequency: '' }))
+  const conditions = Array.isArray(form.conditions)
+    ? form.conditions
+    : String(form.history || '').split(',').map((item) => item.trim()).filter(Boolean)
+  return { ...emptyMedicalForm(), ...form, history: typeof form.history === 'string' ? form.history : '', conditions, allergies: allergyList, medications: medicationList, consent: Boolean(form.consent) }
 }
 
 function readPortalStorage(key, fallback) {

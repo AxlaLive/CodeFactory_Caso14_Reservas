@@ -4,10 +4,10 @@ El frontend usa `medicalRecordService` como adaptador de almacenamiento local mi
 
 ## Acceso y lectura
 
-- `GET /api/medical-records/{patientId}?appointmentId={appointmentId}&since={ISO-8601}&limit=50&cursor={cursor}`
+- `GET /api/medical-records/{patientId}?appointmentId={appointmentId}&limit=50&cursor={cursor}`
 - Requiere `Authorization: Bearer <JWT>`.
 - El servidor obtiene el profesional del token y verifica que sea el profesional asignado a `appointmentId`, y que la cita corresponda a `patientId`. Nunca debe confiar en un `professionalId` enviado por el cliente.
-- Responde con perfil básico, alergias/alertas y cursores independientes por sección para odontograma, tratamientos, notas e imágenes. La lectura inicial solicita `since` igual a un año antes. Cada lista se ordena por `date` descendente.
+- Responde con perfil básico, alergias/alertas y cursores independientes por sección para odontograma, tratamientos, notas, imágenes, recetas, planes de tratamiento y formulario de salud. La historia clínica conserva todos los registros y cada lista se ordena por `date` descendente.
 - La ausencia de registros es válida y se representa con una lista vacía. La respuesta puede incluir errores por sección para permitir éxito parcial; una sección fallida no invalida las demás.
 - `401` indica token expirado o inválido y obliga al cliente a cerrar sesión y descartar el estado clínico en memoria. `403` indica que el profesional no tiene asignada la cita. `404` indica que no existe el expediente/cita.
 
@@ -17,6 +17,9 @@ El frontend usa `medicalRecordService` como adaptador de almacenamiento local mi
 - `POST /api/medical-records/{patientId}/treatments`
 - `POST /api/medical-records/{patientId}/notes`
 - `POST /api/medical-records/{patientId}/images` (multipart; JPEG, PNG, WEBP o GIF)
+- `POST /api/medical-records/{patientId}/prescriptions`
+- `POST /api/medical-records/{patientId}/plans`
+- `PUT /api/medical-records/{patientId}/health-form` para la información registrada por el paciente.
 - `PUT /api/medical-records/{patientId}/{section}/{recordId}` para editar un registro.
 - `DELETE /api/medical-records/{patientId}/{section}/{recordId}` para eliminar un registro.
 - Todas las operaciones exigen el mismo JWT y comprobación de asignación activa a la cita. El servidor valida campos, MIME real/tamaño de imágenes y autoría; no se permite modificar el identificador del paciente o el profesional autor.
