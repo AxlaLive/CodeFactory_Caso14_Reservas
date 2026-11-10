@@ -6,6 +6,8 @@ const STORAGE_KEYS = {
   clients: 'dentia-clients-v1',
   users: 'dentia-demo-users-v1',
   histories: 'dentia-demo-clinical-histories-v1',
+  referrals: 'dentia-demo-referrals-v1',
+  notifications: 'dentia-demo-notifications-v1',
 }
 
 const DEMO_PASSWORD = 'Dentia2026!'
@@ -13,6 +15,8 @@ const DEMO_PASSWORD = 'Dentia2026!'
 export const demoAccounts = [
   { username: 'demo.admin', password: DEMO_PASSWORD, name: 'Administración Dentia', role: 'admin', id: 'demo-admin' },
   { username: 'demo.profesional', password: DEMO_PASSWORD, name: 'Daniel Rojas', role: 'professional', specialty: 'Odontólogo general', id: 'demo-professional' },
+  { username: 'demo.endodoncista', password: DEMO_PASSWORD, name: 'Laura Méndez', role: 'professional', specialty: 'Endodoncista', id: 'demo-endodontist' },
+  { username: 'demo.periodoncista', password: DEMO_PASSWORD, name: 'Carlos Vega', role: 'professional', specialty: 'Periodoncista', id: 'demo-periodontist' },
   { username: 'demo.recepcion', password: DEMO_PASSWORD, name: 'Sofía Herrera', role: 'receptionist', id: 'demo-receptionist' },
   {
     username: 'demo.paciente',
@@ -40,7 +44,9 @@ function dateAfter(days) {
 
 const initialProfessionals = [
   { id: 'demo-professional', name: 'Daniel Rojas', roleType: 'professional', role: 'Odontólogo general', specialty: 'Odontólogo general', identification: '1020304050', email: 'daniel.rojas@dentia.local', username: 'demo.profesional', active: true },
-  { id: 'demo-receptionist', name: 'Sofía Herrera', roleType: 'receptionist', role: 'Recepcionista', identification: '1020304052', email: 'sofia.herrera@dentia.local', username: 'demo.recepcion', active: true },
+  { id: 'demo-endodontist', name: 'Laura Méndez', roleType: 'professional', role: 'Endodoncista', specialty: 'Endodoncista', identification: '1020304051', email: 'laura.mendez@dentia.local', username: 'demo.endodoncista', active: true },
+  { id: 'demo-periodontist', name: 'Carlos Vega', roleType: 'professional', role: 'Periodoncista', specialty: 'Periodoncista', identification: '1020304053', email: 'carlos.vega@dentia.local', username: 'demo.periodoncista', active: true },
+  { id: 'demo-receptionist', name: 'Sofía Herrera', roleType: 'receptionist', role: 'Recepcionista', specialty: 'Recepcionista', identification: '1020304052', email: 'sofia.herrera@dentia.local', username: 'demo.recepcion', active: true },
 ]
 
 const initialAppointments = () => [{
@@ -120,6 +126,29 @@ function saveListItem(key, initial, item, prefix) {
     ? current.map((entry) => entry.id === saved.id ? saved : entry)
     : [...current, saved])
   return saved
+}
+
+function updateReferralStatus(referralId, professionalId, status) {
+  const referrals = readList(STORAGE_KEYS.referrals, [])
+  const referral = referrals.find((item) => item.id === referralId)
+  if (!referral) throw new Error('No se encontró la derivación solicitada.')
+  if (referral.specialistId !== professionalId) throw new Error('Esta derivación no está asignada a tu perfil.')
+  if (referral.status !== 'pending') throw new Error('La derivación ya fue respondida.')
+  const updated = { ...referral, status }
+  if (status === 'accepted') {
+    updated.acceptedAt = new Date().toISOString()
+    updated.acceptedBy = professionalId
+    window.dispatchEvent(new CustomEvent('dentia-referral-accepted', { detail: updated }))
+  }
+  if (status === 'declined') {
+    updated.declinedAt = new Date().toISOString()
+    updated.declinedBy = professionalId
+  }
+  writeList(STORAGE_KEYS.referrals, referrals.map((item) => item.id === referralId ? updated : item))
+  const notifications = readList(STORAGE_KEYS.notifications, [])
+  writeList(STORAGE_KEYS.notifications, notifications.map((item) => item.referralId === referralId ? { ...item, read: true, respondedAt: new Date().toISOString() } : item))
+  return updated
+  return updated
 }
 
 function addMissingSeedItems(key, initial) {
@@ -240,6 +269,34 @@ export const demoClinicService = {
       ...data,
       patientId,
     }, 'demo-history'),
+  },
+  referrals: {
+    listForProfessional: async (professionalId) => readList(STORAGE_KEYS.referrals, []).filter((item) => item.specialistId === professionalId).sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
+    pendingCount: async (professionalId) => readList(STORAGE_KEYS.referrals, []).filter((item) => item.specialistId === professionalId && item.status === 'pending').length,
+    listForPatient: async (patientId) => readList(STORAGE_KEYS.referrals, []).filter((item) => String(item.patientId) === String(patientId)).sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
+    create: async (patientId, payload) => {
+      const saved = saveListItem(STORAGE_KEYS.referrals, [], {
+        ...payload,
+        patientId,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      }, 'demo-referral')
+      saveListItem(STORAGE_KEYS.notifications, [], {
+        recipientId: saved.specialistId,
+        type: 'referral_received',
+        referralId: saved.id,
+        patientId,
+        patientName: saved.patientName,
+        title: `Nueva derivación: ${saved.patientName}`,
+        message: `Caso de ${saved.specialty} remitido por ${saved.referringProfessionalName}.`,
+        createdAt: saved.createdAt,
+        read: false,
+      }, 'demo-notification')
+      return saved
+    },
+    accept: async (referralId, professionalId) => updateReferralStatus(referralId, professionalId, 'accepted'),
+    decline: async (referralId, professionalId) => updateReferralStatus(referralId, professionalId, 'declined'),
+    notifications: async (professionalId) => readList(STORAGE_KEYS.notifications, []).filter((item) => item.recipientId === professionalId).sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
   },
   updateCustomer: async (id, changes) => {
     const accounts = readList(STORAGE_KEYS.clients, initialClients)

@@ -76,12 +76,12 @@ export default function LoginPage({ onLogin }) {
             {demoAccounts.map((account) => (
               <button
                 type="button"
-                key={account.role}
+                key={account.username}
                 onClick={() => enterDemo(account)}
               >
                 <strong>
                   {account.role === 'admin' ? 'Administrador'
-                    : account.role === 'professional' ? 'Profesional'
+                    : account.role === 'professional' ? (account.id === 'demo-professional' ? 'Profesional' : `Profesional · ${account.specialty}`)
                       : account.role === 'receptionist' ? 'Recepcionista'
                         : 'Paciente'}
                 </strong>
@@ -89,7 +89,7 @@ export default function LoginPage({ onLogin }) {
               </button>
             ))}
           </div>
-          <small>Contraseña para los cuatro perfiles: {demoAccounts[0].password}</small>
+          <small>Contraseña para perfiles demo: {demoAccounts[0].password}</small>
         </section>
       </form>
     </main>

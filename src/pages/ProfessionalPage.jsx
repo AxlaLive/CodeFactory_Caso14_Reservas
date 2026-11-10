@@ -4,7 +4,8 @@ import AppointmentDetail from "../components/AppointmentDetail";
 import BlockForm from "../components/BlockForm";
 import MedicalRecordPage from "../components/MedicalRecordPage";
 import PatientManagement from "../components/PatientManagement";
-import { appointmentService, blockService } from "../api/clinicService";
+import ReferralsInbox from "../components/ReferralsInbox";
+import { appointmentService, blockService, referralService } from "../api/clinicService";
 import { getWeekDays, toDateKey } from "../utils/agenda";
 
 export default function ProfessionalPage({
@@ -21,6 +22,7 @@ export default function ProfessionalPage({
   const [medicalView, setMedicalView] = useState("record");
   const [blockFormOpen, setBlockFormOpen] = useState(false);
   const [notice, setNotice] = useState("");
+  const [referralCount, setReferralCount] = useState(0);
   const weekDays = useMemo(() => getWeekDays(weekDate), [weekDate]);
 
   useEffect(() => {
@@ -30,7 +32,8 @@ export default function ProfessionalPage({
         setBlocks(nextBlocks);
       },
     );
-  }, []);
+    referralService.pendingCount(session.id).then(setReferralCount).catch(() => {});
+  }, [session.id]);
 
   const professionalId = session.id;
   const myAppointments = appointments.filter(
@@ -134,6 +137,15 @@ export default function ProfessionalPage({
               </button>
               <button
                 type="button"
+                className={view === "referrals" ? "active" : ""}
+                aria-label="Derivaciones recibidas"
+                aria-current={view === "referrals" ? "page" : undefined}
+                onClick={() => setView("referrals")}
+              >
+                ↙ <span>Derivaciones</span>{referralCount > 0 && <span className="referrals-nav-count">{referralCount}</span>}
+              </button>
+              <button
+                type="button"
                 className={view === "patients" ? "active" : ""}
                 aria-label="Pacientes e historias clínicas"
                 aria-current={view === "patients" ? "page" : undefined}
@@ -164,7 +176,7 @@ export default function ProfessionalPage({
                     : `Expediente de ${medicalAppointment.patientName}`
                 : view === "personal"
                   ? "Mi agenda personal"
-                  : view === "general" ? "Agenda general" : "Pacientes"}
+                  : view === "general" ? "Agenda general" : view === "referrals" ? "Derivaciones recibidas" : "Pacientes"}
             </h1>
           </div>
           <div className="header-profile">
@@ -188,6 +200,11 @@ export default function ProfessionalPage({
               onBack={() => setMedicalAppointment(null)}
               onLogout={onLogout}
             />
+          ) : view === "referrals" ? (
+            <ReferralsInbox session={session} onOpenPatient={(appointment) => {
+              setMedicalAppointment(appointment)
+              setMedicalView("record")
+            }} />
           ) : view === "patients" ? (
             <PatientManagement session={session} />
           ) : view === "personal" ? (

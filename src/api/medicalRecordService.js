@@ -1,4 +1,5 @@
 import { appointmentService } from './clinicService'
+import { sharedReferralAccessService } from './sharedReferralAccessService'
 
 const STORAGE_PREFIX = 'dentia-medical-record-v1'
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
@@ -67,8 +68,11 @@ function readImage(file) {
 
 export const medicalRecordContract = {
   version: 1,
-  sections: ['odontogram', 'treatments', 'notes', 'images', 'prescriptions', 'prescriptionDecisions', 'plans', 'healthForm'],
-  authorization: 'Bearer token + appointmentId asignada al profesional autenticado; solo profesionales pueden emitir recetas',
+  sections: ['odontogram', 'treatments', 'notes', 'images', 'prescriptions', 'prescriptionDecisions', 'referrals', 'plans', 'healthForm'],
+  authorization: 'Bearer token + acceso autorizado al expediente clínico del paciente',
+  referralFields: ['specialistId', 'specialistName', 'specialty', 'reason', 'clinicalNotes', 'imageIds', 'status', 'createdAt', 'acceptedAt', 'acceptedBy'],
+  referralStatuses: ['pending', 'accepted', 'declined'],
+  referralAccess: 'Al aceptar, el especialista obtiene acceso al expediente compartido del paciente según permisos del backend',
   prescriptionFields: ['medication', 'dosage', 'frequency', 'duration', 'quantity', 'route'],
   prescriptionAlerts: 'Alertas de apoyo basadas en alergias registradas e interacciones conocidas; requieren evaluación profesional',
   prescriptionAudit: 'Las decisiones de confirmar o cancelar alertas se conservan en la historia clínica',
@@ -81,18 +85,66 @@ export const medicalRecordService = {
     return records[0] || null
   },
 
+  hasReferralAccess(patientId, session) {
+    if (session?.role !== 'professional' || !session.id) return false
+    return sharedReferralAccessService.hasReferralAccess(patientId, session)
+  },
+
+  listReferralAccessFor(session) {
+    if (session?.role !== 'professional' || !session.id) return []
+    return sharedReferralAccessService.listReferralAccessFor(session)
+  },
+
+  listPatientReferrals(patientId) {
+    return sharedReferralAccessService.listPatientReferrals(patientId)
+  },
+
+  hasReferral(patientId, session) {
+    return this.listPatientReferrals(patientId).some((item) => item.specialistId === session?.id && item.status === 'accepted')
+  },
+
+  async allowReferralAccess(referral) {
+    return sharedReferralAccessService.allowReferralAccess(referral)
+  },
+
+  hasAcceptedReferral(referralId, patientId, session) {
+    if (session?.role !== 'professional' || !session.id) return false
+    const acceptedInAccessRegistry = sharedReferralAccessService.hasAcceptedReferral(referralId, patientId, session)
+    const acceptedInReferralStore = this.listPatientReferrals(patientId).some((item) =>
+      item.id === referralId && item.patientId === patientId &&
+      item.specialistId === session.id && item.status === 'accepted',
+    )
+    return acceptedInAccessRegistry || acceptedInReferralStore
+  },
+
+  async loadReferralPatient(patientId, session) {
+    if (!this.hasReferralAccess(patientId, session)) {
+      throw new Error('No tienes acceso a este expediente clínico.')
+    }
+    const assignedAppointments = await appointmentService.list()
+    const appointment = assignedAppointments.find((item) => item.patientId === patientId && item.referralAccess)
+      || assignedAppointments.find((item) => item.patientId === patientId)
+    if (!appointment) throw new Error('No se encontró información de la cita del paciente derivado.')
+    return this.load(appointment, session)
+  },
+
   async load(appointment, session) {
     if (session?.role !== 'professional' || !session.id) {
       throw new Error('Solo un profesional puede consultar el expediente clínico.')
     }
+    const referralSharedAccess = this.hasAcceptedReferral(appointment?.referralId, appointment?.patientId, session)
+    if (appointment?.referralAccess && !referralSharedAccess) {
+      throw new Error('No tienes una derivación aceptada que habilite este expediente.')
+    }
 
     const assignedAppointments = await appointmentService.list()
+    const sharedAccess = referralSharedAccess || this.hasReferralAccess(appointment.patientId, session)
     const assignedAppointment = assignedAppointments.find(
       (item) => item.id === appointment?.id &&
         item.professionalId === session.id &&
         item.patientId === appointment.patientId,
     )
-    if (!assignedAppointment) {
+    if (!assignedAppointment && !sharedAccess) {
       throw new Error('No tienes una cita asignada con este paciente.')
     }
 
@@ -127,7 +179,7 @@ export const medicalRecordService = {
       ...medicalProfile,
     }
 
-    const sections = ['odontogram', 'treatments', 'notes', 'images', 'prescriptions', 'prescriptionDecisions', 'plans', 'healthForm']
+    const sections = ['odontogram', 'treatments', 'notes', 'images', 'prescriptions', 'prescriptionDecisions', 'referrals', 'plans', 'healthForm']
     const results = await Promise.allSettled(
       sections.map(async (section) => {
         await new Promise((resolve) => window.setTimeout(resolve, 180))
@@ -152,6 +204,12 @@ export const medicalRecordService = {
   },
 
   async save(patientId, section, record, session) {
+    if (section === 'referrals' && (session?.role !== 'professional' || !session.id)) {
+      throw new Error('Solo un profesional autenticado puede derivar un caso.')
+    }
+    if (section === 'referrals' && (!record.specialistId || !record.specialty || !record.reason?.trim())) {
+      throw new Error('Selecciona un especialista e indica el motivo de la derivación.')
+    }
     if (['prescriptions', 'prescriptionDecisions'].includes(section)) {
       if (session?.role !== 'professional' || !session.id) {
         throw new Error('Solo un profesional autenticado puede registrar recetas o decisiones clínicas.')

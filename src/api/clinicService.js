@@ -1,4 +1,5 @@
 import { demoClinicService, demoSessionForCredentials, isDemoSession } from './demoClinicService'
+import { sharedReferralAccessService } from './sharedReferralAccessService'
 
 const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
@@ -282,9 +283,18 @@ export const blockService = {
 
 export const appointmentService = {
   list: async () => {
-    if (isDemoSession()) return demoClinicService.appointments.list()
-    const params = new URLSearchParams({ inicio: '1900-01-01', fin: '9999-12-31' })
-    return (await apiRequest(`/citas/rango?${params}`)).map(mapAppointment)
+    const appointments = isDemoSession()
+      ? await demoClinicService.appointments.list()
+      : (await apiRequest(`/citas/rango?${new URLSearchParams({ inicio: '1900-01-01', fin: '9999-12-31' })}`)).map(mapAppointment)
+    const session = readSession()
+    if (session?.role !== 'professional') return appointments
+    const accepted = await referralService.listAcceptedForProfessional(session.id)
+    const sharedAppointments = accepted.flatMap((referral) => {
+      const source = appointments.find((item) => item.patientId === referral.patientId)
+      if (!source) return []
+      return [{ ...source, id: `referral-${referral.id}`, professionalId: session.id, professionalName: session.name || session.username, specialty: session.specialty || referral.specialty, typeName: 'Consulta por derivación', status: 'referred', referralId: referral.id, referralAccess: true }]
+    })
+    return [...appointments, ...sharedAppointments]
   },
   save: async (appointment) => isDemoSession()
     ? demoClinicService.appointments.save(appointment)
@@ -298,6 +308,27 @@ export const professionalService = {
   list: async () => isDemoSession()
     ? demoClinicService.professionals.list()
     : (await apiRequest('/v1/profesionales')).map(mapProfessional),
+  activeSpecialists: async (excludeId) => (await professionalService.list())
+    .filter((professional) => professional.active !== false && professional.roleType !== 'receptionist' && professional.id !== excludeId),
+  assignedPatients: async (professionalId) => {
+    const [appointments, granted] = await Promise.all([
+      appointmentService.list(),
+      Promise.resolve(sharedReferralAccessService.listReferralAccessFor({ id: professionalId, role: 'professional' })),
+    ])
+    const patients = new Map()
+    appointments.filter((item) => item.professionalId === professionalId).forEach((item) => {
+      const current = patients.get(item.patientId)
+      if (!current || `${item.date} ${item.startTime}` > `${current.date} ${current.startTime}`) patients.set(item.patientId, item)
+    })
+    granted.forEach((access) => {
+      if (patients.has(access.patientId)) return
+      const referrals = sharedReferralAccessService.listPatientReferrals(access.patientId)
+      const referral = referrals.find((item) => item.id === access.referralId && item.status === 'accepted')
+      const related = appointments.find((item) => item.patientId === access.patientId)
+      if (related && referral) patients.set(access.patientId, { ...related, id: `referral-${referral.id}`, professionalId, referralAccess: true, referralId: referral.id, typeName: 'Consulta por derivación' })
+    })
+    return [...patients.values()]
+  },
   create: async (data) => {
     if (isDemoSession()) return demoClinicService.professionals.create(data)
     const [nombre, ...apellidos] = data.name.trim().split(/\s+/)
@@ -409,6 +440,47 @@ export const patientService = {
       activo: true,
     }),
     })),
+}
+
+export const referralService = {
+  listForProfessional: async (professionalId) => {
+    if (isDemoSession()) return demoClinicService.referrals.listForProfessional(professionalId)
+    return apiRequest(`/v1/derivaciones?profesionalDestinoId=${encodeURIComponent(professionalId)}`)
+  },
+  listAcceptedForProfessional: async (professionalId) => {
+    if (isDemoSession()) return (await demoClinicService.referrals.listForProfessional(professionalId)).filter((item) => item.status === 'accepted')
+    const items = await referralService.listForProfessional(professionalId)
+    return items.filter((item) => item.status === 'accepted')
+  },
+  pendingCount: async (professionalId) => {
+    if (isDemoSession()) return demoClinicService.referrals.pendingCount(professionalId)
+    const items = await referralService.listForProfessional(professionalId)
+    return items.filter((item) => item.status === 'pending').length
+  },
+  listForPatient: async (patientId) => {
+    if (isDemoSession()) return demoClinicService.referrals.listForPatient(patientId)
+    return apiRequest(`/v1/pacientes/${encodeURIComponent(patientId)}/derivaciones`)
+  },
+  create: async (patientId, payload) => {
+    if (isDemoSession()) return demoClinicService.referrals.create(patientId, payload)
+    return apiRequest(`/v1/pacientes/${encodeURIComponent(patientId)}/derivaciones`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+  accept: async (referralId, professionalId) => {
+    if (isDemoSession()) return demoClinicService.referrals.accept(referralId, professionalId)
+    return apiRequest(`/v1/derivaciones/${encodeURIComponent(referralId)}/aceptar`, { method: 'PATCH' })
+  },
+  decline: async (referralId, professionalId) => {
+    if (isDemoSession()) return demoClinicService.referrals.decline(referralId, professionalId)
+    return apiRequest(`/v1/derivaciones/${encodeURIComponent(referralId)}/rechazar`, { method: 'PATCH' })
+  },
+  notifications: async (professionalId) => {
+    if (isDemoSession()) return demoClinicService.referrals.notifications(professionalId)
+    return referralService.listForProfessional(professionalId)
+  },
+  approveInformationAccess: (referral) => sharedReferralAccessService.allowReferralAccess(referral),
 }
 
 export const clinicalHistoryService = {

@@ -284,6 +284,89 @@
 .prescription-confirm-copy { margin: 0; color: #71847a; font-size: 10px; line-height: 1.6; }
 .prescription-alert-dialog footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: auto; }
 .prescription-alert-dialog .secondary-button { min-height: 36px; padding: 0 12px; border: 1px solid #dfe9e2; border-radius: 5px; color: #6a8075; background: #fff; font-size: 10px; }
+.referrals-nav-count { display: inline-grid; min-width: 19px; height: 19px; margin-left: auto; place-items: center; border-radius: 12px; color: #fff; background: #cf664e; font-size: 9px; font-weight: 800; }
+.referral-panel { min-height: 0; }
+.referral-form { display: grid; max-width: 900px; gap: 13px; padding-top: 17px; }
+.referral-form-intro { display: flex; align-items: center; gap: 12px; padding: 13px 15px; border: 1px solid #dcebe1; border-radius: 8px; background: #f3f9f5; }
+.referral-form-intro > span { display: grid; flex: 0 0 38px; width: 38px; height: 38px; place-items: center; border-radius: 11px; color: #237454; background: #dff1e5; font-size: 21px; }
+.referral-form-intro div { display: flex; flex-direction: column; gap: 4px; }
+.referral-form-intro strong, .referral-sharing-note strong { color: #365c4b; font-size: 11px; }
+.referral-form-intro small { color: #83948b; font-size: 9px; }
+.referral-field { display: flex; flex-direction: column; gap: 6px; color: #526a60; font-size: 10px; font-weight: 700; }
+.referral-field select, .referral-field textarea { width: 100%; min-height: 39px; padding: 9px 11px; border: 1px solid #d9e5de; border-radius: 6px; outline: none; color: #314a40; background: #fff; font: 400 11px Manrope,sans-serif; }
+.referral-field textarea { resize: vertical; }
+.referral-field select:focus, .referral-field textarea:focus { border-color: #76b18b; box-shadow: 0 0 0 2px #e4f3e9; }
+.referral-hint { color: #889990; font-size: 10px; }
+.referral-attachments { min-width: 0; padding: 13px; border: 1px solid #e3ece6; border-radius: 7px; }
+.referral-attachments legend { padding: 0 6px; color: #526a60; font-size: 10px; font-weight: 700; }
+.referral-attachments > p { margin: 3px; color: #82938b; font-size: 9px; }
+.referral-image-options { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 9px; }
+.referral-image-options > label { display: flex; align-items: flex-start; gap: 7px; min-width: 0; padding: 8px; border: 1px solid #e6eee8; border-radius: 6px; cursor: pointer; }
+.referral-image-options > label > input { margin-top: 5px; accent-color: #398f69; }
+.referral-image-options > label > span { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
+.referral-image-options img, .referral-image-options b { display: grid; width: 100%; height: 76px; place-items: center; border-radius: 4px; color: #73a184; background: #f2f7f3; object-fit: cover; }
+.referral-image-options strong { overflow: hidden; color: #496455; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.referral-image-options small { color: #82938b; font-size: 8px; line-height: 1.4; }
+.referral-sharing-note { display: flex; flex-direction: column; gap: 4px; padding: 11px 13px; border-left: 3px solid #71ae84; border-radius: 5px; background: #f4f9f5; }
+.referral-sharing-note span { color: #73867c; font-size: 9px; line-height: 1.55; }
+.referral-submit { justify-self: start; min-height: 39px; }
+.referral-notice { color: #347b57; font-size: 10px; }
+.referral-history { max-width: 900px; margin-top: 24px; border-top: 1px solid #e9efeb; }
+.referral-history h3 { margin: 17px 0 7px; color: #405d50; font: 700 13px Manrope,sans-serif; }
+.referral-history-item { display: grid; grid-template-columns: 145px minmax(0,1fr); gap: 14px; padding: 14px 5px; border-top: 1px solid #edf2ee; }
+.referral-status-line { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; }
+.referral-status { display: inline-flex; padding: 5px 9px; border-radius: 14px; color: #886820; background: #fbf2d9; font-size: 8px; font-weight: 800; }
+.referral-status-accepted { color: #286c4b; background: #e3f3e8; }
+.referral-status-declined { color: #8b544b; background: #f9e9e5; }
+.referral-status-line time, .referral-history-content small { color: #84958c; font-size: 9px; }
+.referral-history-content strong { color: #365c4b; font-size: 11px; }
+.referral-history-content p { margin: 5px 0; color: #62786d; font-size: 10px; line-height: 1.5; }
+.referral-history-content small { display: block; margin-top: 4px; }
+.referral-history-content .referral-accepted-info { color: #347b57; font-weight: 700; }
+.referral-open-record { padding: 7px 0; margin-top: 4px; color: #347b57; background: transparent; font-size: 9px; font-weight: 700; }
+.referrals-inbox { display: grid; gap: 14px; }
+.referrals-inbox-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; padding-bottom: 13px; border-bottom: 1px solid #dfe9e2; }
+.referrals-inbox-heading h2 { margin: 0; color: #173c38; font: 700 19px Manrope,sans-serif; }
+.referrals-inbox-heading p { margin: 5px 0 0; color: #83948b; font-size: 10px; }
+.referrals-inbox-heading .secondary-button { min-height: 35px; padding: 0 12px; border: 1px solid #d7e2dd; border-radius: 6px; color: #426d5a; background: #fff; font-size: 10px; font-weight: 700; }
+.referrals-access-explainer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 15px; padding: 12px 14px; border-left: 3px solid #71ae84; border-radius: 5px; background: #f4f9f5; }
+.referrals-access-explainer strong { color: #365c4b; font-size: 10px; }
+.referrals-access-explainer span { flex: 1 1 100%; color: #73867c; font-size: 9px; line-height: 1.5; }
+.referrals-access-explainer b { color: #9c573e; font-size: 9px; }
+.referrals-list { display: grid; gap: 13px; }
+.referral-inbox-card { min-height: 0; padding: 18px 20px; }
+.referral-inbox-card > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid #edf2ee; }
+.referral-card-patient { display: flex; align-items: center; gap: 12px; }
+.referral-card-patient .medical-avatar { width: 42px; height: 42px; flex-b: 42px; font-size: 12px; }
+.referral-card-patient .eyebrow { margin-bottom: 3px; font-size: 8px; }
+.referral-card-patient h3 { margin: 0; color: #304943; font: 700 14px Manrope,sans-serif; }
+.referral-card-patient small { color: #83948b; font-size: 9px; }
+.referral-inbox-meta { display: flex; flex-wrap: wrap; gap: 7px 18px; padding: 12px 0; color: #74877c; font-size: 9px; }
+.referral-inbox-meta b { color: #496455; }
+.referral-inbox-detail { padding: 12px; border-radius: 6px; background: #f7faf8; }
+.referral-inbox-detail strong { display: block; margin: 0 0 4px; color: #496455; font-size: 9px; }
+.referral-inbox-detail p { margin: 0 0 9px; color: #62786d; font-size: 10px; line-height: 1.55; white-space: pre-wrap; }
+.referral-attachment-count { color: #44835e; font-size: 9px; }
+.referral-inbox-card > footer { display: flex; justify-content: flex-end; gap: 8px; padding-top: 13px; }
+.referral-inbox-card > footer .secondary-button { min-height: 36px; padding: 0 12px; border: 1px solid #dfe9e2; border-radius: 5px; color: #6a8075; background: #fff; font-size: 10px; }
+.referral-inbox-card > footer .primary-button, .referral-accepted-footer .primary-button { min-height: 36px; padding: 0 12px; border-radius: 5px; font-size: 10px; }
+.referral-accepted-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 13px; }
+.referral-accepted-footer > span { color: #347b57; font-size: 9px; line-height: 1.5; }
+.referral-declined-footer { padding-top: 12px; color: #936459; font-size: 9px; }
+.referrals-empty { min-height: 220px; }
+.referral-access-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 11px 14px; margin-top: 12px; border: 1px solid #bfddc8; border-left: 4px solid #398f69; border-radius: 7px; color: #286c4b; background: #f1f8f3; }
+.referral-access-banner strong { font-size: 10px; }
+.referral-access-banner span { flex: 1; color: #6b8176; font-size: 9px; }
+.referral-access-banner button { color: #347b57; background: transparent; font-size: 9px; font-weight: 700; }
+@media (max-width: 720px) {
+  .referrals-inbox-heading { flex-direction: column; }
+  .referral-image-options { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .referral-history-item { grid-template-columns: minmax(0,1fr); gap: 6px; }
+  .referral-status-line { flex-direction: row; align-items: center; }
+  .referral-inbox-card > footer, .referral-accepted-footer { align-items: stretch; flex-direction: column-reverse; }
+  .referral-inbox-card > footer button, .referral-accepted-footer button { width: 100%; min-height: 40px; }
+  .referral-card-patient .medical-avatar { width: 36px; height: 36px; flex-basis: 36px; }
+}
 @media (max-width: 720px) {
   .prescription-form-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .prescription-field.span-two { grid-column: span 2; }

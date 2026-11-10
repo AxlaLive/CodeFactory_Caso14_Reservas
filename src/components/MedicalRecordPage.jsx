@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { authService } from '../api/clinicService'
 import { medicalRecordService } from '../api/medicalRecordService'
 import PrescriptionPanel from './PrescriptionPanel'
+import ReferralPanel from './ReferralPanel'
 import TreatmentPlanPanel from './TreatmentPlanPanel'
 
 const TABS = [
@@ -10,6 +11,7 @@ const TABS = [
   ['notes', 'Notas clínicas'],
   ['images', 'Imágenes asociadas'],
   ['prescriptions', 'Receta electrónica'],
+  ['referrals', 'Derivaciones'],
 ]
 
 const TOOTH_NUMBERS = ['18', '17', '16', '15', '14', '13', '12', '11', '21', '22', '23', '24', '25', '26', '27', '28', '48', '47', '46', '45', '44', '43', '42', '41', '31', '32', '33', '34', '35', '36', '37', '38']
@@ -49,6 +51,34 @@ export default function MedicalRecordPage({ appointment, session, activeView, on
   const [viewerError, setViewerError] = useState(false)
   const [selectedTooth, setSelectedTooth] = useState('16')
   const [selectedRegion, setSelectedRegion] = useState('O')
+  const [sharedFromReferral, setSharedFromReferral] = useState(false)
+  const [readingSharedRecord, setReadingSharedRecord] = useState(false)
+
+  const openSharedPatient = async (patientId) => {
+    setReadingSharedRecord(true)
+    try {
+      const result = await medicalRecordService.loadReferralPatient(patientId, session)
+      setProfile(result.profile)
+      setRecords(result.records)
+      setErrors(result.errors)
+      setSharedFromReferral(true)
+      setLoading(false)
+      setActiveTab('summary')
+    } catch (error) {
+      setErrors((current) => ({ ...current, sharedRecord: error.message }))
+    } finally {
+      setReadingSharedRecord(false)
+    }
+  }
+
+  const closeSharedRecord = () => {
+    setSharedFromReferral(false)
+    setProfile(null)
+    setRecords({})
+    setLoading(true)
+    setErrors((current) => ({ ...current, sharedRecord: undefined }))
+    setActiveTab('summary')
+  }
 
   useEffect(() => {
     let active = true
@@ -60,7 +90,7 @@ export default function MedicalRecordPage({ appointment, session, activeView, on
       setLoading(false)
     }).catch((error) => {
       if (!active) return
-      setErrors({ access: error.message || 'No fue posible abrir el expediente.' })
+      if (!sharedFromReferral) setErrors({ access: error.message || 'No fue posible abrir el expediente.' })
       setLoading(false)
     })
     return () => { active = false }
@@ -161,6 +191,9 @@ export default function MedicalRecordPage({ appointment, session, activeView, on
       {errors.access && <div className="medical-error" role="alert">{errors.access} <button onClick={onBack}>Volver a la agenda</button></div>}
       {errors.session && <div className="medical-error" role="alert">{errors.session}</div>}
 
+      {errors.sharedRecord && <div className="medical-error" role="alert">{errors.sharedRecord}</div>}
+      {sharedFromReferral && <aside className="referral-access-banner"><strong>Acceso compartido por derivación aceptada</strong><span>Consulta del expediente clínico completo autorizada por esta derivación.</span><button type="button" onClick={closeSharedRecord}>Cerrar expediente compartido</button></aside>}
+      {readingSharedRecord && <p className="medical-loading"><span className="medical-spinner" /> Cargando expediente compartido…</p>}
       {!errors.access && activeView === 'record' && <>
         <nav className="medical-tabs" aria-label="Secciones del expediente">
           {TABS.map(([id, label]) => (
@@ -178,6 +211,7 @@ export default function MedicalRecordPage({ appointment, session, activeView, on
               {activeTab === 'notes' && <ListPanel title="Notas clínicas" subtitle="Observaciones relevantes para la atención." items={records.notes || []} empty="Este paciente aún no tiene notas clínicas." onAdd={() => setEditing({ section: 'notes' })} onEdit={(item) => setEditing({ section: 'notes', item })} onDelete={(item) => removeRecord('notes', item)} renderItem={(item) => <p>{item.text}</p>} />}
               {activeTab === 'images' && <ImagePanel items={records.images || []} onAdd={(file, description) => saveRecord('images', { file, description })} onEdit={(item) => setEditing({ section: 'images', item })} onView={(item) => { setViewerError(false); setViewer(item) }} onDelete={(item) => removeRecord('images', item)} />}
               {activeTab === 'prescriptions' && <PrescriptionPanel patientId={patientId} profile={profile} records={records} session={session} onSaved={(section, saved) => setRecords((current) => ({ ...current, [section]: [saved, ...(current[section] || [])].sort((a, b) => b.date.localeCompare(a.date)) }))} />}
+              {activeTab === 'referrals' && <ReferralPanel patientId={patientId} patientName={appointment.patientName} records={records} session={session} onOpenPatient={openSharedPatient} onSaved={(saved) => setRecords((current) => ({ ...current, referrals: [saved, ...(current.referrals || [])] }))} />}
               {activeTab !== 'summary' && <p className="medical-retention">Historial completo, ordenado del más reciente al más antiguo.</p>}
             </>
           )}
@@ -365,6 +399,7 @@ function ClinicalHistoryPanel({ records, onAddTreatment, onOpenPrescriptions }) 
     ...(records.images || []).map((item) => ({ ...item, kind: 'Imagen asociada', description: item.description || item.name || 'Imagen añadida al expediente' })),
     ...(records.prescriptions || []).map((item) => ({ ...item, kind: 'Receta electrónica', description: `${item.medication || item.title}${item.dosage ? ` · ${item.dosage}` : ''}${item.frequency ? ` · ${item.frequency}` : ''}${item.instructions ? ` · ${item.instructions}` : ''}` })),
     ...(records.prescriptionDecisions || []).map((item) => ({ ...item, kind: 'Decisión de alerta farmacológica', description: `${item.decision === 'confirmed' ? 'Prescripción confirmada con alerta' : 'Prescripción cancelada por alerta'}: ${item.medication}. ${item.alerts?.join(' · ') || ''}` })),
+    ...(records.referrals || []).map((item) => ({ ...item, kind: 'Derivación a especialista', description: `${item.specialty} · ${item.specialistName} · ${item.status === 'accepted' ? 'Aceptada' : item.status === 'declined' ? 'No aceptada' : 'Pendiente'} · ${item.reason}` })),
     ...(records.plans || []).map((item) => {
       const procedures = item.phases?.flatMap((phase) => phase.procedures || []) || []
       const completed = procedures.filter((procedure) => procedure.completed).length
