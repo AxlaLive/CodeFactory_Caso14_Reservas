@@ -227,7 +227,8 @@
   .client-brand { grid-template-columns: 28px auto; padding: 0 5px 12px; font-size: 18px; }
   .client-brand > span { width: 27px; height: 27px; }
   .client-brand small { font-size: 6px; }
-  .client-user, .client-nav-label, .client-logout { display: none; }
+  .client-user, .client-nav-label { display: none; }
+  .client-logout { display: flex; flex: 0 0 auto; width: auto; min-height: 38px; padding: 8px 12px; margin: 4px auto 0; border-top: 0; color: #fff; }
   .client-sidebar nav { display: flex; gap: 5px; overflow-x: auto; }
   .client-sidebar nav button { flex: 0 0 auto; justify-content: center; width: auto; padding: 9px 10px; font-size: 10px; }
   .client-header { min-height: 69px; padding: 0 17px; }
@@ -255,4 +256,69 @@
   .message-compose-footer { flex-wrap: wrap; }
   .message-compose-footer > .client-primary { margin-left: 0; }
   .client-dialog { padding: 20px; }
+}
+
+.health-form-panel { padding: 25px; }
+.health-form-panel > .client-section-heading { align-items: center; padding-bottom: 18px; border-bottom: 1px solid #e8efea; }
+.health-form-panel .client-section-heading h2 { font: 800 24px/1.2 Manrope,sans-serif; }
+.health-form-panel .client-section-heading p { margin: 7px 0 0; color: #788c82; font-size: 12px; }
+.health-completion { display: flex; align-items: center; gap: 9px; color: #438365; }
+.health-completion strong { font: 800 19px Manrope,sans-serif; }
+.health-completion span { color: #82938b; font-size: 10px; }
+.health-info-banner { padding: 17px 19px; margin: 18px 0; border: 1px solid #d5e9dd; border-radius: 9px; background: linear-gradient(110deg,#f1faf4,#fff); }
+.health-info-banner strong { color: #285d46; font: 700 14px Manrope,sans-serif; }
+.health-info-banner p { margin: 5px 0 0; color: #73877d; font-size: 11px; line-height: 1.5; }
+.health-form-section { padding: 18px 0; border-top: 1px solid #ebf1ed; }
+.health-form-title { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; }
+.health-form-title > span { display: grid; flex: 0 0 32px; width: 32px; height: 32px; place-items: center; border-radius: 9px; color: #287452; background: #e4f4e9; font-size: 11px; font-weight: 800; }
+.health-form-title h3 { margin: 0; color: #354f44; font: 700 14px Manrope,sans-serif; }
+.health-form-title p { margin: 4px 0 0; color: #87978f; font-size: 10px; }
+.health-condition-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin-bottom: 12px; }
+.health-condition-grid label { display: flex; align-items: center; gap: 8px; min-height: 42px; padding: 8px 10px; border: 1px solid #e0eae3; border-radius: 7px; color: #65796f; background: #fff; font-size: 10px; cursor: pointer; }
+.health-condition-grid label.selected { border-color: #80b996; color: #347653; background: #f0f8f2; }
+.health-condition-grid input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.health-condition-grid label > span { display: grid; flex: 0 0 16px; width: 16px; height: 16px; place-items: center; border: 1px solid #cbd9d0; border-radius: 4px; color: transparent; background: #fff; font-size: 10px; }
+.health-condition-grid label.selected > span { border-color: #4a9b70; color: #fff; background: #4a9b70; }
+.health-form .client-field { margin: 10px 0 0; }
+.health-form .client-field textarea { min-height: 65px; }
+.health-allergy-input { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; min-height: 46px; padding: 6px 8px; border: 1px solid #dfe9e2; border-radius: 7px; background: #fff; }
+.health-allergy-input > span { display: inline-flex; align-items: center; gap: 7px; padding: 5px 8px; border-radius: 14px; color: #9b4d40; background: #fff0ec; font-size: 10px; }
+.health-allergy-input > span button { padding: 0; color: inherit; background: transparent; font-size: 15px; line-height: 1; }
+.health-allergy-input input { min-width: 130px; flex: 1; padding: 7px; border: 0; outline: 0; color: #3e574b; font-size: 11px; }
+.health-add-tag { padding: 7px 10px; border-radius: 5px; color: #327453; background: #edf7f0; font-size: 10px; font-weight: 700; }
+.health-warning-helper { margin: 9px 0 0; color: #a45b48; font-size: 10px; }
+.health-medication-row { display: grid; grid-template-columns: minmax(0,1fr) 120px minmax(0,1fr) 32px; gap: 8px; margin: 8px 0; }
+.health-medication-row input { min-width: 0; min-height: 39px; padding: 8px 10px; border: 1px solid #dfe9e2; border-radius: 6px; color: #314a40; background: #fff; font-size: 10px; }
+.health-medication-row > button { border-radius: 5px; color: #a45b52; background: #fff3f1; font-size: 18px; }
+.health-add-medication { min-height: 34px; padding: 0 10px; border: 1px dashed #9bc9ad; border-radius: 5px; color: #347b57; background: #f7fbf8; font-size: 10px; font-weight: 700; }
+.health-consent { display: flex; align-items: flex-start; gap: 11px; padding: 15px; border: 1px solid #e2eae4; border-radius: 8px; background: #f8faf8; cursor: pointer; }
+.health-consent.accepted { border-color: #a5d0b1; background: #f1f8f2; }
+.health-consent input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.health-consent > span { display: grid; flex: 0 0 18px; width: 18px; height: 18px; place-items: center; border: 1px solid #c4d2c9; border-radius: 4px; color: transparent; background: #fff; font-size: 11px; }
+.health-consent.accepted > span { border-color: #4a9b70; color: #fff; background: #4a9b70; }
+.health-consent strong { color: #415b4e; font-size: 11px; }
+.health-consent p { margin: 4px 0 0; color: #829189; font-size: 10px; line-height: 1.5; }
+.health-form-footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-top: 17px; }
+.health-form-footer > span { color: #71877c; font-size: 10px; }
+.health-form-footer .client-primary { min-height: 42px; padding: 0 18px; }
+.client-assignment-note { display: flex; align-items: center; gap: 11px; padding: 12px; margin: 12px 0; border: 1px solid #d5e9dd; border-radius: 7px; color: #287452; background: #f2faf4; }
+.client-assignment-note > span { display: grid; width: 29px; height: 29px; place-items: center; border-radius: 8px; color: #17644f; background: #dcefe3; }
+.client-assignment-note strong, .client-assignment-note small { display: block; }
+.client-assignment-note strong { font-size: 11px; }
+.client-assignment-note small { margin-top: 3px; color: #71877c; font-size: 10px; }
+.client-booking-dialog { width: min(100%, 720px); }
+.client-booking-dialog > header h2 { font: 800 22px Manrope,sans-serif; }
+.client-booking-dialog .client-time-picker { border-color: #e0eae3; background: #fbfdfb; }
+.client-booking-dialog .client-time-picker button { min-width: 72px; min-height: 38px; border-radius: 7px; }
+.client-booking-dialog .client-time-picker button:hover { border-color: #68a982; background: #e8f5ec; }
+@media (max-width: 700px) {
+  .health-form-panel { padding: 17px; }
+  .health-form-panel > .client-section-heading { align-items: flex-start; }
+  .health-form-panel .client-section-heading h2 { font-size: 20px; }
+  .health-condition-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .health-medication-row { grid-template-columns: 1fr 1fr 32px; }
+  .health-medication-row input:first-child { grid-column: span 2; }
+  .health-medication-row input:nth-child(3) { grid-column: span 2; }
+  .health-form-footer { align-items: stretch; flex-direction: column; }
+  .health-form-footer .client-primary { width: 100%; }
 }

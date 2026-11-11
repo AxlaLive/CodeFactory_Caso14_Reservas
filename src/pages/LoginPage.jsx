@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { demoAccounts } from '../api/demoClinicService'
 
 export default function LoginPage({ onLogin }) {
   const [username, setUsername] = useState('')
@@ -12,6 +13,15 @@ export default function LoginPage({ onLogin }) {
       await onLogin({ username, password })
     } catch (formError) {
       setError(formError.message)
+    }
+  }
+
+  const enterDemo = async (account) => {
+    setError('')
+    try {
+      await onLogin({ username: account.username, password: account.password })
+    } catch (loginError) {
+      setError(loginError.message)
     }
   }
 
@@ -59,6 +69,28 @@ export default function LoginPage({ onLogin }) {
         <button className="primary-button login-button" type="submit">
           Ingresar <span>→</span>
         </button>
+        <section className="demo-access" aria-labelledby="demo-access-title">
+          <h2 id="demo-access-title">Acceso local para pruebas</h2>
+          <p>Disponible aunque el servidor o la base de datos no respondan. Los cambios se guardan en este navegador.</p>
+          <div className="demo-access-options">
+            {demoAccounts.map((account) => (
+              <button
+                type="button"
+                key={account.username}
+                onClick={() => enterDemo(account)}
+              >
+                <strong>
+                  {account.role === 'admin' ? 'Administrador'
+                    : account.role === 'professional' ? (account.id === 'demo-professional' ? 'Profesional' : `Profesional · ${account.specialty}`)
+                      : account.role === 'receptionist' ? 'Recepcionista'
+                        : 'Paciente'}
+                </strong>
+                <span>{account.username}</span>
+              </button>
+            ))}
+          </div>
+          <small>Contraseña para perfiles demo: {demoAccounts[0].password}</small>
+        </section>
       </form>
     </main>
   )
