@@ -259,6 +259,14 @@
 }
 
 .health-form-panel { padding: 25px; }
+.client-ai-history > .client-primary { margin-top: 18px; }
+.client-ai-privacy { padding: 12px 14px; margin-top: 17px; border-left: 3px solid #69a982; border-radius: 5px; color: #60766a; background: #f1f8f3; font-size: 11px; line-height: 1.65; }
+.client-ai-summary { padding: 18px; margin-top: 20px; border: 1px solid #cfe5d6; border-left: 4px solid #398f69; border-radius: 8px; background: #f7fbf8; }
+.client-ai-summary header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.client-ai-summary h3 { margin: 0; color: #304943; font: 700 15px Manrope,sans-serif; }
+.client-ai-summary header small { color: #82918b; font-size: 9px; }
+.client-ai-summary p { margin: 14px 0; color: #4a6358; font-size: 12px; line-height: 1.8; white-space: pre-wrap; }
+.client-ai-summary > small { color: #82918b; font-size: 10px; }
 .health-form-panel > .client-section-heading { align-items: center; padding-bottom: 18px; border-bottom: 1px solid #e8efea; }
 .health-form-panel .client-section-heading h2 { font: 800 24px/1.2 Manrope,sans-serif; }
 .health-form-panel .client-section-heading p { margin: 7px 0 0; color: #788c82; font-size: 12px; }

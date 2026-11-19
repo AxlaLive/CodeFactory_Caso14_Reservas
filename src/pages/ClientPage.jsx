@@ -3,6 +3,7 @@ import {
   appointmentService,
   authService,
   blockService,
+  clinicalSummaryService,
   professionalService,
   spaceService,
 } from '../api/clinicService'
@@ -14,6 +15,7 @@ const navigation = [
   { id: 'appointments', icon: '▦', label: 'Mis citas' },
   { id: 'profile', icon: '♙', label: 'Datos personales' },
   { id: 'forms', icon: '☑', label: 'Formulario de salud' },
+  { id: 'clinical-history', icon: '✦', label: 'Historia clínica' },
   { id: 'payments', icon: '$', label: 'Pagos' },
   { id: 'messages', icon: '✉', label: 'Comunicación' },
 ]
@@ -41,6 +43,9 @@ export default function ClientPage({ session, onUpdateSession, onLogout }) {
   const [messageText, setMessageText] = useState('')
   const [attachment, setAttachment] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [clinicalSummary, setClinicalSummary] = useState(null)
+  const [summaryBusy, setSummaryBusy] = useState(false)
+  const [summaryError, setSummaryError] = useState('')
 
   useEffect(() => {
     let mounted = true
@@ -265,6 +270,19 @@ export default function ClientPage({ session, onUpdateSession, onLogout }) {
     }
   }
 
+  const generateClinicalSummary = async () => {
+    setSummaryBusy(true)
+    setSummaryError('')
+    try {
+      setClinicalSummary(await clinicalSummaryService.generate())
+    } catch (error) {
+      setClinicalSummary(null)
+      setSummaryError(error.message || 'No fue posible generar el resumen clínico.')
+    } finally {
+      setSummaryBusy(false)
+    }
+  }
+
   const submitMessage = async (event) => {
     event.preventDefault()
     if (!messageText.trim() && !attachment) return
@@ -310,6 +328,7 @@ export default function ClientPage({ session, onUpdateSession, onLogout }) {
             {view === 'appointments' && <AppointmentsView appointments={upcomingAppointments} history={historyAppointments} onBook={() => startBooking()} onReschedule={startBooking} onCancel={cancelAppointment} />}
             {view === 'profile' && <ProfileView session={session} profile={profile} onChange={(field, value) => setProfile((current) => ({ ...current, [field]: value }))} onSubmit={saveProfile} busy={busy} />}
             {view === 'forms' && <MedicalForm value={medicalForm} onChange={(field, value) => setMedicalForm((current) => ({ ...current, [field]: value }))} onSubmit={saveMedicalForm} busy={busy} />}
+            {view === 'clinical-history' && <PatientClinicalHistory summary={clinicalSummary} busy={summaryBusy} error={summaryError} onGenerate={generateClinicalSummary} />}
             {view === 'payments' && <PaymentsView appointments={payableAppointments} />}
             {view === 'messages' && <MessagesView messages={messages} text={messageText} attachment={attachment} onText={setMessageText} onAttachment={setAttachment} onSubmit={submitMessage} />}
           </>}
@@ -318,6 +337,27 @@ export default function ClientPage({ session, onUpdateSession, onLogout }) {
       {booking && <BookingDialog booking={booking} slots={availableSlots} busy={busy} onChange={(field, value) => setBooking((current) => ({ ...current, [field]: value, ...(field === 'date' ? { startTime: '' } : {}) }))} onSubmit={saveBooking} onClose={() => setBooking(null)} />}
     </div>
   )
+}
+
+function PatientClinicalHistory({ summary, busy, error, onGenerate }) {
+  return <section className="client-card client-panel client-ai-history">
+    <div className="client-section-heading">
+      <div><span className="eyebrow">TU EXPEDIENTE</span><h2>Historia clínica</h2><p>Genera una síntesis de las notas odontológicas registradas para tu cuenta.</p></div>
+      <span className="profile-card-icon" aria-hidden="true">✦</span>
+    </div>
+    <div className="client-ai-privacy">
+      El servidor identifica tu cuenta y consulta únicamente tu historia clínica. Antes de enviar el texto a Azure OpenAI, enmascara identificadores directos detectables. El resumen se muestra solo aquí y no se guarda.
+    </div>
+    {error && <div className="client-alert" role="alert">{error}</div>}
+    <button className="client-primary" type="button" onClick={onGenerate} disabled={busy}>
+      {busy ? 'Generando resumen…' : '✦ Generar resumen con IA'}
+    </button>
+    {summary && <article className="client-ai-summary" aria-live="polite">
+      <header><div><span className="eyebrow">RESUMEN ASISTIDO POR IA</span><h3>Tu historia clínica odontológica</h3></div><small>{summary.generadoEn ? new Date(summary.generadoEn).toLocaleString('es-CO') : ''}</small></header>
+      <p>{summary.resumen}</p>
+      <small>Este resumen es informativo y no reemplaza la valoración de tu profesional de salud.</small>
+    </article>}
+  </section>
 }
 
 function AppointmentsView({ appointments, history, onBook, onReschedule, onCancel }) {

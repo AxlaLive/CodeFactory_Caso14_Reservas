@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { authService } from '../api/clinicService'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { authService, clinicalSummaryService } from '../api/clinicService'
 import { medicalRecordService } from '../api/medicalRecordService'
 import PrescriptionPanel from './PrescriptionPanel'
 import ReferralPanel from './ReferralPanel'
@@ -53,6 +53,10 @@ export default function MedicalRecordPage({ appointment, session, activeView, on
   const [selectedRegion, setSelectedRegion] = useState('O')
   const [sharedFromReferral, setSharedFromReferral] = useState(false)
   const [readingSharedRecord, setReadingSharedRecord] = useState(false)
+  const [clinicalSummary, setClinicalSummary] = useState(null)
+  const [summaryLoading, setSummaryLoading] = useState(false)
+  const [summaryError, setSummaryError] = useState('')
+  const summaryRequestId = useRef(0)
 
   const openSharedPatient = async (patientId) => {
     setReadingSharedRecord(true)
@@ -120,10 +124,41 @@ export default function MedicalRecordPage({ appointment, session, activeView, on
   }, [onLogout])
 
   const patientId = appointment.patientId
+  const canGenerateSummary = ['admin', 'professional'].includes(session?.role) && !sharedFromReferral
+  useEffect(() => {
+    summaryRequestId.current += 1
+    setClinicalSummary(null)
+    setSummaryError('')
+    setSummaryLoading(false)
+  }, [patientId])
+
   const odontogram = useMemo(
     () => latestByTooth(records.odontogram || []),
     [records.odontogram],
   )
+
+  const generateClinicalSummary = async () => {
+    const requestId = ++summaryRequestId.current
+    const requestedPatientId = patientId
+    setSummaryLoading(true)
+    setSummaryError(null)
+    try {
+      const result = await clinicalSummaryService.generate(requestedPatientId)
+      if (requestId === summaryRequestId.current) {
+        setClinicalSummary({ patientId: requestedPatientId, ...result })
+      }
+    } catch (error) {
+      if (requestId === summaryRequestId.current) {
+        setClinicalSummary(null)
+        setSummaryError({
+          patientId: requestedPatientId,
+          message: error.message || 'No fue posible generar el resumen clínico.',
+        })
+      }
+    } finally {
+      if (requestId === summaryRequestId.current) setSummaryLoading(false)
+    }
+  }
 
   const saveRecord = async (section, value) => {
     try {
@@ -178,7 +213,30 @@ export default function MedicalRecordPage({ appointment, session, activeView, on
           <strong>{appointment.date} · {appointment.startTime}</strong>
           <small>{session.specialty || 'Profesional'}</small>
         </div>
+        {canGenerateSummary && (
+          <button
+            type="button"
+            className="medical-ai-button"
+            onClick={generateClinicalSummary}
+            disabled={summaryLoading}
+            aria-busy={summaryLoading}
+          >
+            {summaryLoading ? 'Generando resumen…' : '✦ Generar resumen con IA'}
+          </button>
+        )}
       </header>
+
+      {canGenerateSummary && <p className="medical-ai-disclaimer">Se enviarán a Azure OpenAI notas clínicas con identificadores directos detectables enmascarados. El resumen no se guarda y no reemplaza el criterio profesional.</p>}
+      {summaryError?.patientId === patientId && <div className="medical-error" role="alert">{summaryError.message}</div>}
+      {clinicalSummary?.patientId === patientId && (
+        <section className="medical-ai-summary" aria-live="polite">
+          <div className="medical-ai-summary-heading">
+            <div><span className="eyebrow">Resumen asistido por IA</span><h3>Historia clínica odontológica</h3></div>
+            <small>{clinicalSummary.generadoEn ? new Date(clinicalSummary.generadoEn).toLocaleString('es-CO') : ''}</small>
+          </div>
+          <p>{clinicalSummary.resumen}</p>
+        </section>
+      )}
 
       {profile?.allergies?.length > 0 && (
         <aside className="medical-allergy-alert" role="alert">

@@ -495,6 +495,15 @@ export const clinicalHistoryService = {
     }),
 }
 
+export const clinicalSummaryService = {
+  generate: async (patientIdentification) => apiRequest('/v1/historias-clinicas/resumen-ia', {
+    method: 'POST',
+    body: JSON.stringify(patientIdentification
+      ? { documentoPaciente: String(patientIdentification) }
+      : {}),
+  }),
+}
+
 export const authService = {
   login: async ({ username, password }) => {
     const demoSession = demoSessionForCredentials(username, password)

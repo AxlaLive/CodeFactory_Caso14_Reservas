@@ -68,4 +68,6 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
     boolean existsByEspacioFisicoId(Long espacioId);
 
     boolean existsByPacienteId(Long pacienteId);
+
+    boolean existsByPacienteIdAndProfesionalId(Long pacienteId, Long profesionalId);
 }

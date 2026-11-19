@@ -115,6 +115,8 @@ public class SecurityConfig {
                         .hasAnyRole("ADMIN", "PROFESSIONAL", "RECEPTIONIST")
                         .requestMatchers(HttpMethod.POST, "/api/v1/pacientes/*/historia-clinica")
                         .hasRole("PROFESSIONAL")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/historias-clinicas/resumen-ia")
+                        .hasAnyRole("ADMIN", "PROFESSIONAL", "CLIENTE")
                         .requestMatchers(HttpMethod.POST, "/api/citas")
                         .hasAnyRole("ADMIN", "RECEPTIONIST")
                         .requestMatchers(HttpMethod.PUT, "/api/citas/**")
