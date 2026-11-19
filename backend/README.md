@@ -67,6 +67,38 @@ secrets in the hosting provider's environment settings; never commit them to
 this repository. Do not set `SPRING_JPA_HIBERNATE_DDL_AUTO` to `create` or
 `create-drop` in production.
 
+## Demo patients and clinical summaries
+
+The application can create 70 clearly marked synthetic patients, patient
+accounts, appointments, and one to three fictional dental notes per patient.
+Seeding is disabled by default. To enable it locally or on the Render backend,
+set `DEMO_DATA_ENABLED=true` and set `DEMO_DATA_CLIENT_PASSWORD` to a private
+password of 8 to 72 UTF-8 bytes. Do not use a real patient's information.
+
+The demo accounts use `paciente.demo.NNNN@example.invalid` as the login email
+and `DEMO-DENTIA-NNNN` as the fictitious document, where `NNNN` ranges from
+`0001` to `0070`. All demo patients use the password configured in
+`DEMO_DATA_CLIENT_PASSWORD`. If the database has no active professional account
+with login credentials, the initializer also creates `odontologo-demo` with
+that same password so the synthetic appointment histories can be opened by a professional account. The
+initializer is idempotent and can be disabled again by setting
+`DEMO_DATA_ENABLED=false`; it does not delete records already created.
+
+Clinical summaries are generated on demand from saved backend clinical notes.
+Groq is the default provider. Configure `GROQ_API_KEY` as a private environment
+variable on the backend; `GROQ_MODEL` is optional and defaults to
+`llama-3.3-70b-versatile`. To use Azure OpenAI instead, set `AI_PROVIDER=azure`
+and configure `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, and
+`AZURE_OPENAI_DEPLOYMENT`; `AZURE_OPENAI_API_VERSION` is optional and defaults
+to `2024-10-21`. The Azure endpoint accepts only an HTTPS URL. The backend excludes
+account fields and masks known patient identifiers, contact details, and
+common identifier patterns before the request. The generated summary is not
+stored. Do not enable transmission of real clinical data until the clinic has
+reviewed the provider, its terms, data retention and processing location, and
+applicable privacy requirements. Use only synthetic records for the demo.
+If the selected provider settings are missing, the endpoint responds with `503`
+rather than returning a fabricated summary.
+
 ## Deploy the backend to Render
 
 Create a **Web Service** from the GitHub repository and configure its runtime

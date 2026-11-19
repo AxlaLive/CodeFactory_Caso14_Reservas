@@ -259,6 +259,15 @@ button:disabled { cursor: not-allowed; opacity: .65; }
 .patient-directory-item span { color: #344a41; font-size: 14px; }
 .patient-details { display: grid; gap: 24px; min-width: 0; }
 .patient-summary, .clinical-history-entry header { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; }
+.patient-history-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.patient-history-heading h3 { margin-bottom: 0; }
+.patient-ai-disclaimer { margin: 8px 0; color: #75877e; font-size: 10px; line-height: 1.5; }
+.patient-ai-summary { padding: 16px; margin: 14px 0; border: 1px solid #cfe5d6; border-left: 4px solid #398f69; border-radius: 8px; background: #f7fbf8; }
+.patient-ai-summary header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.patient-ai-summary header strong { display: block; color: #304943; font-size: 13px; }
+.patient-ai-summary header small { color: #82918b; font-size: 9px; }
+.patient-ai-summary p { margin: 12px 0; color: #4a6358; font-size: 11px; line-height: 1.8; white-space: pre-wrap; }
+.patient-ai-summary > small { color: #82918b; font-size: 9px; }
 .patient-summary h3, .patient-subsection h3, .clinical-entry-form h3 { margin: 4px 0 14px; color: #183b2f; }
 .patient-contact, .clinical-history-entry dl { display: grid; gap: 12px; margin: 0; }
 .patient-contact { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }

@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   appointmentService,
+  clinicalSummaryService,
   clinicalHistoryService,
   patientService,
 } from "../api/clinicService";
@@ -34,8 +35,12 @@ export default function PatientManagement({ session }) {
   const [recordForm, setRecordForm] = useState(emptyRecord);
   const [loading, setLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [clinicalSummary, setClinicalSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const summaryRequestId = useRef(0);
 
   useEffect(() => {
     let current = true;
@@ -83,6 +88,13 @@ export default function PatientManagement({ session }) {
       appointment.professionalId === session.id && appointment.status !== "cancelled",
   );
   const canWriteHistory = session.role === "professional";
+
+  useEffect(() => {
+    summaryRequestId.current += 1;
+    setClinicalSummary(null);
+    setSummaryError("");
+    setSummaryLoading(false);
+  }, [selectedPatientId]);
 
   useEffect(() => {
     if (!selectedPatientId) {
@@ -136,6 +148,26 @@ export default function PatientManagement({ session }) {
       setNotice("Nota clínica guardada en la historia del paciente.");
     } catch (saveError) {
       setError(`No fue posible guardar la nota clínica: ${saveError.message}`);
+    }
+  };
+
+  const generateClinicalSummary = async () => {
+    if (!selectedPatient || session.role !== "admin") return;
+    const requestId = ++summaryRequestId.current;
+    setSummaryLoading(true);
+    setSummaryError("");
+    try {
+      const result = await clinicalSummaryService.generate(selectedPatient.identification);
+      if (requestId === summaryRequestId.current) {
+        setClinicalSummary({ patientId: selectedPatient.id, ...result });
+      }
+    } catch (summaryRequestError) {
+      if (requestId === summaryRequestId.current) {
+        setClinicalSummary(null);
+        setSummaryError(summaryRequestError.message || "No fue posible generar el resumen.");
+      }
+    } finally {
+      if (requestId === summaryRequestId.current) setSummaryLoading(false);
     }
   };
 
@@ -266,10 +298,38 @@ export default function PatientManagement({ session }) {
               </section>
 
               <section className="patient-subsection">
-                <h3>Historia clínica</h3>
+                <div className="patient-history-heading">
+                  <h3>Historia clínica</h3>
+                  {session.role === "admin" && (
+                    <button
+                      className="primary-button"
+                      type="button"
+                      onClick={generateClinicalSummary}
+                      disabled={summaryLoading || historyLoading || history.length === 0}
+                    >
+                      {summaryLoading ? "Generando resumen…" : "✦ Generar resumen con IA"}
+                    </button>
+                  )}
+                </div>
                 <p className="field-hint">
                   Las notas quedan asociadas a la cita y al profesional que atendió. No se pueden borrar desde esta pantalla.
                 </p>
+                {session.role === "admin" && (
+                  <p className="patient-ai-disclaimer">
+                    Al generar, se enviarán a Azure OpenAI notas con identificadores directos detectables enmascarados. El resumen no se guarda.
+                  </p>
+                )}
+                {summaryError && <div className="form-error" role="alert">{summaryError}</div>}
+                {clinicalSummary?.patientId === selectedPatient.id && (
+                  <article className="patient-ai-summary" aria-live="polite">
+                    <header>
+                      <div><span className="eyebrow">Resumen asistido por IA</span><strong>Historia clínica odontológica</strong></div>
+                      <small>{clinicalSummary.generadoEn ? new Date(clinicalSummary.generadoEn).toLocaleString("es-CO") : ""}</small>
+                    </header>
+                    <p>{clinicalSummary.resumen}</p>
+                    <small>El resumen es informativo y no reemplaza el criterio profesional. No se guarda.</small>
+                  </article>
+                )}
                 {historyLoading ? <p className="empty-hint">Cargando historia clínica…</p> : history.length === 0 ? (
                   <p className="empty-hint">Aún no hay notas clínicas para este paciente.</p>
                 ) : (
