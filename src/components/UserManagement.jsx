@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SPECIALTIES, userService } from "../api/clinicService";
+import PasswordInput from "./PasswordInput";
 
 const emptyForm = {
   name: "",
@@ -20,6 +21,8 @@ export default function UserManagement() {
   const [formOpen, setFormOpen] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const passwordInputRef = useRef(null);
+  const passwordConfirmationRef = useRef(null);
 
   useEffect(() => {
     userService.list()
@@ -43,6 +46,11 @@ export default function UserManagement() {
   const submit = async (event) => {
     event.preventDefault();
     setError("");
+    const password = form.password;
+    const passwordConfirmation = form.passwordConfirmation;
+    setForm((current) => ({ ...current, password: "", passwordConfirmation: "" }));
+    passwordInputRef.current?.hide();
+    passwordConfirmationRef.current?.hide();
 
     const name = form.name.trim();
     const username = form.username.trim();
@@ -68,15 +76,15 @@ export default function UserManagement() {
       setError("El usuario debe tener entre 4 y 30 letras, números, puntos, guiones o guiones bajos.");
       return;
     }
-    if (form.password.length < 6) {
+    if (password.length < 6) {
       setError("La contraseña debe tener al menos 6 caracteres.");
       return;
     }
-    if (new TextEncoder().encode(form.password).length > 72) {
+    if (new TextEncoder().encode(password).length > 72) {
       setError("La contraseña no puede superar 72 bytes UTF-8.");
       return;
     }
-    if (form.password !== form.passwordConfirmation) {
+    if (password !== passwordConfirmation) {
       setError("Las contraseñas no coinciden.");
       return;
     }
@@ -98,7 +106,7 @@ export default function UserManagement() {
         identification,
         email,
         username,
-        password: form.password,
+        password,
       });
       setUsers((current) => [...current, created].sort((left, right) =>
         left.name.localeCompare(right.name, "es"),
@@ -106,11 +114,19 @@ export default function UserManagement() {
       setForm(emptyForm);
       setFormOpen(false);
       setNotice(`La cuenta de ${created.name} quedó creada.`);
-    } catch (saveError) {
-      setError(saveError.message);
+    } catch {
+      setError("No fue posible crear la cuenta. Inténtalo de nuevo.");
     } finally {
       setSaving(false);
     }
+  };
+
+  const cancelForm = () => {
+    setForm(emptyForm);
+    setFormOpen(false);
+    setError("");
+    passwordInputRef.current?.hide();
+    passwordConfirmationRef.current?.hide();
   };
 
   return (
@@ -220,10 +236,10 @@ export default function UserManagement() {
               />
             </Field>
             <Field id="new-user-password" label="Contraseña inicial">
-              <input
+              <PasswordInput
+                ref={passwordInputRef}
                 id="new-user-password"
                 name="newPassword"
-                type="password"
                 autoComplete="new-password"
                 minLength={6}
                 maxLength={72}
@@ -233,10 +249,10 @@ export default function UserManagement() {
               />
             </Field>
             <Field id="new-user-password-confirmation" label="Confirmar contraseña">
-              <input
+              <PasswordInput
+                ref={passwordConfirmationRef}
                 id="new-user-password-confirmation"
                 name="passwordConfirmation"
-                type="password"
                 autoComplete="new-password"
                 minLength={6}
                 maxLength={72}
@@ -250,10 +266,7 @@ export default function UserManagement() {
             <button
               className="secondary-button"
               type="button"
-              onClick={() => {
-                setFormOpen(false);
-                setError("");
-              }}
+              onClick={cancelForm}
               disabled={saving}
             >
               Cancelar
@@ -309,6 +322,16 @@ export default function UserManagement() {
 }
 
 function Field({ id, label, children }) {
+  const isPasswordInput = children.type === PasswordInput;
+  if (isPasswordInput) {
+    return (
+      <div className="user-field">
+        <label htmlFor={id}>{label}</label>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="user-field">
       <label htmlFor={id}>{label}</label>

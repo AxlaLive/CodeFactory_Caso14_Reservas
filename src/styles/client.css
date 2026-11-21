@@ -330,3 +330,13 @@
   .health-form-footer { align-items: stretch; flex-direction: column; }
   .health-form-footer .client-primary { width: 100%; }
 }
+
+.login-panel .password-form-field { display: flex; flex-direction: column; gap: 8px; min-width: 0; margin: 0 0 10px; color: #52685f; font-size: 12px; font-weight: 700; text-align: left; }
+.login-panel .password-form-field label { margin: 0; color: inherit; font-size: inherit; font-weight: inherit; }
+.password-input-control { position: relative; display: flex; align-items: center; width: 100%; }
+.password-input-control input { padding-right: 46px !important; }
+.password-input-control input::-ms-reveal, .password-input-control input::-ms-clear { display: none; }
+.password-toggle-button { position: absolute; right: 7px; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border-radius: 5px; color: #527266; background: transparent; cursor: pointer; }
+.password-toggle-button:hover { color: #1f684a; background: #edf7f0; }
+.password-toggle-button:focus-visible { outline: 2px solid #287658; outline-offset: 1px; }
+.password-toggle-button svg { width: 20px; height: 20px; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
