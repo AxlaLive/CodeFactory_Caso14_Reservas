@@ -34,5 +34,20 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
                                       @Param("espacioId") Long espacioId,
                                       @Param("horaInicio") LocalTime horaInicio,
                                       @Param("horaFin") LocalTime horaFin);
+
     List<Cita> findByFechaBetween(LocalDate fechaInicio, LocalDate fechaFin);
+
+    List<Cita> findByPacienteIdAndFechaGreaterThanEqualAndEstadoNotOrderByFechaAscHoraInicioAsc(
+            Long pacienteId,
+            LocalDate fechaActual,
+            String estadoExcluido
+    );
+
+    @Query("SELECT c FROM Cita c WHERE c.paciente.id = :pacienteId " +
+            "AND (c.fecha < :fechaActual OR UPPER(c.estado) IN ('ATENDIDA', 'COMPLETADA')) " +
+            "ORDER BY c.fecha DESC, c.horaInicio DESC")
+    List<Cita> findHistorialClinicoByPacienteId(
+            @Param("pacienteId") Long pacienteId,
+            @Param("fechaActual") LocalDate fechaActual
+    );
 }
