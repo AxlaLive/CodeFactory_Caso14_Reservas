@@ -1,10 +1,11 @@
-import { demoClinicService, demoSessionForCredentials, isDemoSession } from './demoClinicService'
+import { demoClinicService, demoSessionForCredentials } from './demoClinicService'
 import { sharedReferralAccessService } from './sharedReferralAccessService'
 
 const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 ).replace(/\/+$/, '')
 const AUTH_STORAGE_KEY = 'dentia-auth'
+let currentSession = null
 
 async function apiRequest(path, options = {}) {
   const session = readSession()
@@ -30,15 +31,15 @@ async function apiRequest(path, options = {}) {
 }
 
 function readSession() {
-  try {
-    const session = JSON.parse(window.localStorage.getItem(AUTH_STORAGE_KEY) || 'null')
-    const demoRoles = ['admin', 'professional', 'receptionist', 'client']
-    return session?.token || (session?.demoMode === true && demoRoles.includes(session.role))
-      ? session
-      : null
-  } catch {
-    return null
-  }
+  return currentSession
+}
+
+function isDemoSession() {
+  return currentSession?.demoMode === true
+}
+
+function clearPersistedSession() {
+  window.localStorage.removeItem(AUTH_STORAGE_KEY)
 }
 
 function idString(id) {
@@ -506,9 +507,11 @@ export const clinicalSummaryService = {
 
 export const authService = {
   login: async ({ username, password }) => {
+    currentSession = null
+    clearPersistedSession()
     const demoSession = demoSessionForCredentials(username, password)
     if (demoSession) {
-      window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(demoSession))
+      currentSession = demoSession
       return demoSession
     }
 
@@ -525,16 +528,19 @@ export const authService = {
       specialty: response.specialty || '',
       role: mapRole(response.role),
     }
-    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
+    currentSession = session
     return session
   },
   updateCustomer: async (id, changes) => {
     if (!isDemoSession()) throw new Error('La edición del perfil de paciente aún no está conectada al servidor.')
     const session = await demoClinicService.updateCustomer(id, changes)
-    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
+    currentSession = session
     return session
   },
-  session: readSession,
+  session: () => {
+    clearPersistedSession()
+    return readSession()
+  },
   isTokenExpired: () => {
     const session = readSession()
     if (!session?.token) return false
@@ -552,5 +558,8 @@ export const authService = {
       throw new Error('No se pudo validar la expiración de la sesión.')
     }
   },
-  logout: () => window.localStorage.removeItem(AUTH_STORAGE_KEY),
+  logout: () => {
+    currentSession = null
+    clearPersistedSession()
+  },
 }
