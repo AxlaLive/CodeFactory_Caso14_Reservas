@@ -31,8 +31,6 @@ const initialProfessionals = [
 
 const DEMO_CREDENTIALS = { username: 'admin', password: 'dentia123', role: 'receptionist' }
 
-// Tipos de desempeño del profesional. Cada uno habilita su propio catálogo de
-// tipos de cita, y cada tipo de cita define la duración y el buffer (en minutos).
 export const SPECIALTY_TYPES = [
   'Odontólogo general',
   'Endodoncista',
@@ -42,7 +40,6 @@ export const SPECIALTY_TYPES = [
   'Odontopediatra',
 ]
 
-// Catálogo de tipos de cita por tipo de profesional (duración + buffer).
 export const APPOINTMENT_TYPES = {
   'Odontólogo general': [
     { id: 'prof-general-profilaxis', name: 'Profilaxis', duration: 30, buffer: 10 },
@@ -72,7 +69,6 @@ export const APPOINTMENT_TYPES = {
   ],
 }
 
-// Tipos de bloqueo que el profesional puede reservar en su agenda personal.
 export const BLOCK_TYPES = [
   { id: 'break', name: 'Descanso' },
   { id: 'admin', name: 'Tarea administrativa' },
@@ -86,7 +82,6 @@ export function findAppointmentType(specialty, typeId) {
   return appointmentTypesFor(specialty).find((item) => item.id === typeId) || null
 }
 
-// Compatibilidad con el formulario de registro de trabajadores.
 export const SPECIALTIES = SPECIALTY_TYPES
 
 const initialSpaces = [
@@ -101,7 +96,6 @@ const initialAppointments = [
   { id: 'apt-004', receivedAt: 4, patientKind: 'unregistered', patientId: '1065432109', patientName: 'Andrés Beltrán', patientAge: 45, patientPhone: '3132225533', patientEmail: 'andres@correo.co', professionalId: 'prof-001', professionalName: 'Daniel Rojas', specialty: 'Odontólogo general', typeId: 'prof-general-exodoncia', typeName: 'Exodoncia', spaceId: 'space-002', spaceName: 'Sala especializada', date: '2026-09-16', startTime: '08:30', endTime: '09:30', bufferEndTime: '09:45', status: 'scheduled', notes: 'Cita simultánea en otro consultorio' },
 ]
 
-// Espacios de agenda bloqueados por el propio profesional (descansos / tareas).
 const initialBlocks = [
   { id: 'blk-001', professionalId: 'prof-001', date: '2026-09-16', startTime: '12:00', endTime: '13:00', type: 'break', label: 'Almuerzo' },
 ]
@@ -334,6 +328,51 @@ export const authService = {
   },
   session: () => read(AUTH_STORAGE_KEY, null),
   logout: () => window.localStorage.removeItem(AUTH_STORAGE_KEY),
+}
+
+export const patientPortalService = {
+  getProfile: async (session) => {
+    if (!session?.token) return null
+    const response = await fetch(`${API_BASE_URL}/pacientes/me`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.token}`,
+      },
+    })
+    if (!response.ok) {
+      const body = await response.json().catch(() => null)
+      throw new Error(body?.message || 'No fue posible cargar el perfil del paciente.')
+    }
+    return response.json()
+  },
+  getUpcomingAppointments: async (session) => {
+    if (!session?.token) return null
+    const response = await fetch(`${API_BASE_URL}/pacientes/me/proximas-citas`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.token}`,
+      },
+    })
+    if (!response.ok) {
+      const body = await response.json().catch(() => null)
+      throw new Error(body?.message || 'No fue posible cargar las próximas citas.')
+    }
+    return response.json()
+  },
+  getClinicalHistory: async (session) => {
+    if (!session?.token) return null
+    const response = await fetch(`${API_BASE_URL}/pacientes/me/historial-clinico`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.token}`,
+      },
+    })
+    if (!response.ok) {
+      const body = await response.json().catch(() => null)
+      throw new Error(body?.message || 'No fue posible consultar el historial clínico.')
+    }
+    return response.json()
+  },
 }
 
 function customerSession(client) {
