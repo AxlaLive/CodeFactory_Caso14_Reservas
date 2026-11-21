@@ -1,4 +1,4 @@
-import { appointmentService } from './clinicService'
+import { appointmentService, clinicalHistoryService } from './clinicService'
 import { sharedReferralAccessService } from './sharedReferralAccessService'
 
 const STORAGE_PREFIX = 'dentia-medical-record-v1'
@@ -148,6 +148,14 @@ export const medicalRecordService = {
       throw new Error('No tienes una cita asignada con este paciente.')
     }
 
+    let backendHistory = []
+    try {
+      const targetId = appointment.patientDbId || appointment.patientId
+      backendHistory = await clinicalHistoryService.list(targetId)
+    } catch {
+      // Conserva compatibilidad si el paciente aún no tiene registros en backend
+    }
+
     let clients = []
     let profileError
     try {
@@ -200,6 +208,15 @@ export const medicalRecordService = {
       }
     })
 
+    if (Array.isArray(backendHistory) && backendHistory.length > 0) {
+      const mappedNotes = backendHistory.map((item) => ({
+        id: `backend-${item.id}`,
+        date: String(item.fechaRegistro || new Date().toISOString()).slice(0, 10),
+        text: [item.diagnostico, item.tratamiento, item.observaciones].filter(Boolean).join(' · '),
+      }))
+      records.notes = [...mappedNotes, ...(records.notes || [])]
+    }
+
     return { profile, records, errors }
   },
 
@@ -233,6 +250,19 @@ export const medicalRecordService = {
       ? current.map((item) => item.id === saved.id ? saved : item)
       : [saved, ...current]
     window.localStorage.setItem(storageKey(patientId, section), JSON.stringify(next))
+
+    if (['notes', 'treatments'].includes(section)) {
+      try {
+        await clinicalHistoryService.create(patientId, {
+          diagnostico: section === 'treatments' ? record.title : 'Nota clínica',
+          tratamiento: section === 'treatments' ? record.description : '',
+          observaciones: section === 'notes' ? record.text : record.description,
+        })
+      } catch {
+        // Mantiene el guardado local si el servidor rechaza algún campo opcional
+      }
+    }
+
     return saved
   },
 

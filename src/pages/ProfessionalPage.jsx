@@ -16,6 +16,7 @@ export default function ProfessionalPage({
 }) {
   const [view, setView] = useState("personal");
   const [appointments, setAppointments] = useState([]);
+  const [myAppointments, setMyAppointments] = useState([]);
   const [blocks, setBlocks] = useState([]);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [medicalAppointment, setMedicalAppointment] = useState(null);
@@ -26,19 +27,13 @@ export default function ProfessionalPage({
   const weekDays = useMemo(() => getWeekDays(weekDate), [weekDate]);
 
   useEffect(() => {
-    Promise.all([appointmentService.list(), blockService.list()]).then(
-      ([nextAppointments, nextBlocks]) => {
-        setAppointments(nextAppointments);
-        setBlocks(nextBlocks);
-      },
-    );
+    appointmentService.myAgenda().then(setMyAppointments).catch(() => {});
+    appointmentService.list().then(setAppointments).catch(() => {});
+    blockService.list().then(setBlocks).catch(() => {});
     referralService.pendingCount(session.id).then(setReferralCount).catch(() => {});
   }, [session.id]);
 
   const professionalId = session.id;
-  const myAppointments = appointments.filter(
-    (item) => item.professionalId === professionalId,
-  );
   const myBlocks = blocks.filter(
     (item) => item.professionalId === professionalId,
   );
