@@ -1,0 +1,3 @@
+ALTER TABLE pacientes ADD COLUMN telefono VARCHAR(30);
+
+ALTER TABLE pacientes ADD COLUMN correo VARCHAR(150);

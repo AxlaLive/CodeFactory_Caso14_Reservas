@@ -1,6 +1,11 @@
 package com.codefactory.reservas.domain;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "pacientes")
@@ -15,6 +20,12 @@ public class Paciente {
 
     @Column(nullable = false)
     private String documento;
+
+    @Column(length = 30)
+    private String telefono;
+
+    @Column(length = 150)
+    private String correo;
 
     @Column(nullable = false)
     private boolean activo = true;
@@ -51,6 +62,22 @@ public class Paciente {
 
     public void setDocumento(String documento) {
         this.documento = documento;
+    }
+
+    public String getTelefono() {
+        return telefono;
+    }
+
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+
+    public String getCorreo() {
+        return correo;
+    }
+
+    public void setCorreo(String correo) {
+        this.correo = correo;
     }
 
     public boolean isActivo() {

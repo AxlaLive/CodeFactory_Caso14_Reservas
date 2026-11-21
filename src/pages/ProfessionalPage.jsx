@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import AgendaWeekly from "../components/AgendaWeekly";
 import AppointmentDetail from "../components/AppointmentDetail";
 import BlockForm from "../components/BlockForm";
-import { appointmentService, blockService } from "../api/clinicService";
+import MedicalRecordPage from "../components/MedicalRecordPage";
+import PatientManagement from "../components/PatientManagement";
+import ReferralsInbox from "../components/ReferralsInbox";
+import { appointmentService, blockService, referralService } from "../api/clinicService";
 import { getWeekDays, toDateKey } from "../utils/agenda";
 
 export default function ProfessionalPage({
@@ -15,8 +18,11 @@ export default function ProfessionalPage({
   const [appointments, setAppointments] = useState([]);
   const [blocks, setBlocks] = useState([]);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [medicalAppointment, setMedicalAppointment] = useState(null);
+  const [medicalView, setMedicalView] = useState("record");
   const [blockFormOpen, setBlockFormOpen] = useState(false);
   const [notice, setNotice] = useState("");
+  const [referralCount, setReferralCount] = useState(0);
   const weekDays = useMemo(() => getWeekDays(weekDate), [weekDate]);
 
   useEffect(() => {
@@ -26,7 +32,8 @@ export default function ProfessionalPage({
         setBlocks(nextBlocks);
       },
     );
-  }, []);
+    referralService.pendingCount(session.id).then(setReferralCount).catch(() => {});
+  }, [session.id]);
 
   const professionalId = session.id;
   const myAppointments = appointments.filter(
@@ -65,11 +72,12 @@ export default function ProfessionalPage({
 
   return (
     <div className="admin-shell">
-      <aside className="admin-sidebar">
+      <a className="skip-link" href="#main-content">Saltar al contenido principal</a>
+      <aside className={`admin-sidebar ${medicalAppointment ? "clinical-sidebar" : ""}`}>
         <div className="admin-brand">
           <span>✦</span>
           <strong>Dentia</strong>
-          <small>AGENDA PROFESIONAL</small>
+          <small>{medicalAppointment ? "ATENCIÓN CLÍNICA" : "AGENDA PROFESIONAL"}</small>
         </div>
         <div className="admin-user">
           <b>{initials}</b>
@@ -78,40 +86,100 @@ export default function ProfessionalPage({
             <span>{session.specialty || "Profesional"}</span>
           </div>
         </div>
-        <nav>
-          <span className="nav-title">Mi agenda</span>
-          <button
-            className={view === "personal" ? "active" : ""}
-            onClick={() => setView("personal")}
-          >
-            ▦ <span>Agenda personal</span>
-          </button>
-          <button
-            className={view === "general" ? "active" : ""}
-            onClick={() => setView("general")}
-          >
-            ◱ <span>Agenda general</span>
-          </button>
+        <nav aria-label="Navegación principal">
+          {medicalAppointment ? (
+            <>
+              <span className="nav-title">Atención clínica</span>
+              {[
+                ["record", "▤", "Expediente clínico"],
+                ["odontogram", "◉", "Odontograma"],
+                ["plan", "▣", "Plan de tratamiento"],
+              ].map(([id, icon, label]) => (
+                <button
+                  type="button"
+                  key={id}
+                  className={medicalView === id ? "active" : ""}
+                  aria-current={medicalView === id ? "page" : undefined}
+                  onClick={() => setMedicalView(id)}
+                >
+                  <span className="clinical-nav-icon">{icon}</span>
+                  <span>{label}</span>
+                </button>
+              ))}
+              <button
+                type="button"
+                className="clinical-return"
+                onClick={() => setMedicalAppointment(null)}
+              >
+                ← <span>Volver a mi agenda</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="nav-title">Mi agenda</span>
+              <button
+                type="button"
+                className={view === "personal" ? "active" : ""}
+                aria-label="Agenda personal"
+                aria-current={view === "personal" ? "page" : undefined}
+                onClick={() => setView("personal")}
+              >
+                ▦ <span>Agenda personal</span>
+              </button>
+              <button
+                type="button"
+                className={view === "general" ? "active" : ""}
+                aria-label="Agenda general"
+                aria-current={view === "general" ? "page" : undefined}
+                onClick={() => setView("general")}
+              >
+                ◱ <span>Agenda general</span>
+              </button>
+              <button
+                type="button"
+                className={view === "referrals" ? "active" : ""}
+                aria-label="Derivaciones recibidas"
+                aria-current={view === "referrals" ? "page" : undefined}
+                onClick={() => setView("referrals")}
+              >
+                ↙ <span>Derivaciones</span>{referralCount > 0 && <span className="referrals-nav-count">{referralCount}</span>}
+              </button>
+              <button
+                type="button"
+                className={view === "patients" ? "active" : ""}
+                aria-label="Pacientes e historias clínicas"
+                aria-current={view === "patients" ? "page" : undefined}
+                onClick={() => setView("patients")}
+              >
+                ♧ <span>Pacientes</span>
+              </button>
+            </>
+          )}
         </nav>
-        <button className="logout" onClick={onLogout}>
+        <button className="logout" type="button" onClick={onLogout}>
           ↪ Cerrar sesion
         </button>
       </aside>
 
-      <main className="admin-main">
+      <main className="admin-main" id="main-content" tabIndex="-1">
         <header className="admin-header">
           <div>
             <span className="eyebrow">
-              Clinica Sonrisa · {session.specialty || "Profesional"}
+              Clinica Sonrisa · {medicalAppointment ? "Atención clínica" : session.specialty || "Profesional"}
             </span>
             <h1>
-              {view === "personal" ? "Mi agenda personal" : "Agenda general"}
+              {medicalAppointment
+                ? medicalView === "odontogram"
+                  ? `Odontograma · ${medicalAppointment.patientName}`
+                  : medicalView === "plan"
+                    ? `Plan de tratamiento · ${medicalAppointment.patientName}`
+                    : `Expediente de ${medicalAppointment.patientName}`
+                : view === "personal"
+                  ? "Mi agenda personal"
+                  : view === "general" ? "Agenda general" : view === "referrals" ? "Derivaciones recibidas" : "Pacientes"}
             </h1>
           </div>
           <div className="header-profile">
-            <span className="header-status">
-              <span /> Sistema operativo
-            </span>
             <div className="profile-chip">
               <span className="profile-avatar">{initials}</span>
               <div>
@@ -123,7 +191,23 @@ export default function ProfessionalPage({
         </header>
 
         <div className="admin-content">
-          {view === "personal" ? (
+          {medicalAppointment ? (
+            <MedicalRecordPage
+              appointment={medicalAppointment}
+              session={session}
+              activeView={medicalView}
+              onChangeView={setMedicalView}
+              onBack={() => setMedicalAppointment(null)}
+              onLogout={onLogout}
+            />
+          ) : view === "referrals" ? (
+            <ReferralsInbox session={session} onOpenPatient={(appointment) => {
+              setMedicalAppointment(appointment)
+              setMedicalView("record")
+            }} />
+          ) : view === "patients" ? (
+            <PatientManagement session={session} />
+          ) : view === "personal" ? (
             <>
               <section className="agenda-intro">
                 <div>
@@ -262,6 +346,12 @@ export default function ProfessionalPage({
           onEdit={() => {}}
           onReschedule={() => {}}
           onCancel={() => {}}
+          canManageMedical={view === "personal"}
+          onManageMedical={(appointment) => {
+            setMedicalAppointment(appointment)
+            setMedicalView("record")
+            setSelectedAppointment(null)
+          }}
         />
       )}
       {blockFormOpen && (

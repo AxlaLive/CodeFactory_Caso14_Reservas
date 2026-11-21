@@ -48,8 +48,10 @@ public class ProfesionalController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarProfesional(@PathVariable Long id) {
-        profesionalService.eliminar(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> eliminarProfesional(@PathVariable Long id) {
+        if (profesionalService.eliminar(id)) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(profesionalService.obtenerPorId(id).orElseThrow());
     }
 }

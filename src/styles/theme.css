@@ -1,0 +1,691 @@
+/* Identidad visual Dentia: tipografia y paleta unificadas. */
+:root {
+  --brand-950: #35234d;
+  --brand-900: #432d60;
+  --brand-800: #563a7a;
+  --brand-700: #68458f;
+  --brand-600: #7651a8;
+  --brand-500: #9272be;
+  --brand-300: #cbb8e1;
+  --brand-200: #e5d9f1;
+  --brand-100: #f1eaf8;
+  --brand-50: #f8f5fb;
+  --ink: #30283a;
+  --muted: #756d80;
+  --line: #e5ddec;
+  --page: #f8f6fa;
+  --surface: #fff;
+  --font-app: "DM Sans", sans-serif;
+}
+
+/* Tipografia global: DM Sans es la familia usada por la agenda general. */
+html { font-family: var(--font-app); font-size: 16px; }
+*, *::before, *::after { font-family: var(--font-app) !important; font-size: inherit !important; }
+body { color: var(--ink); background: var(--page); font-size: 14px !important; line-height: 1.5; }
+button, input, select, textarea { font-size: 14px !important; }
+
+/* Escala tipografica compartida: cuerpo 14px, apoyo 12px, titulos 17-30px. */
+p, label, input, select, textarea, button, td, th, dt, dd, time { font-size: 14px !important; }
+.admin-content span, .admin-content strong, .admin-content b,
+.client-content span, .client-content strong, .client-content b,
+.medical-record span, .medical-record strong, .medical-record b { font-size: 14px !important; }
+.admin-content small, .client-content small, .medical-record small { font-size: 12px !important; }
+small, .eyebrow, .nav-title, .nav-label, .client-nav-label { font-size: 12px !important; }
+h1 { font-size: clamp(26px, 2.2vw, 30px) !important; line-height: 1.2; }
+h2 { font-size: 22px !important; line-height: 1.3; }
+h3 { font-size: 17px !important; line-height: 1.35; }
+.admin-header h1, .client-header h1 { font-size: 24px !important; }
+.client-welcome h2 { font-size: clamp(22px, 2.5vw, 28px) !important; }
+.client-section-heading h2, .client-history h2, .medical-section-heading h2 { font-size: 19px !important; }
+.medical-patient-info h2, .medical-editor h2, .client-dialog > header h2 { font-size: 21px !important; }
+.login-panel h1 { font-size: 28px !important; }
+.login-logo { font-size: 24px !important; }
+.login-visual > div:last-child strong { font-size: clamp(32px, 4vw, 52px) !important; }
+.payment-summary > div > strong { font-size: 26px !important; }
+.clinical-summary-stats strong, .health-completion strong { font-size: 19px !important; }
+.clinical-plan-summary section strong { font-size: 21px !important; }
+.odontogram-tooth-number { font-size: 17px !important; }
+.entry-option-icon, .welcome-icon, .medical-empty span, .allergy-icon,
+.prescription-template-label > span, .referral-form-intro > span { font-size: 22px !important; }
+.entry-option-arrow { font-size: 20px !important; }
+.tooth-x { font-size: 41px !important; line-height: 42px; }
+.tooth-sealant { font-size: 13px !important; }
+.tooth-implant { font-size: 24px !important; }
+.referral-card-patient .medical-avatar { font-size: 14px !important; }
+.entry-option-icon, .welcome-icon, .profile-card-icon, .payment-icon,
+.medical-empty span, .allergy-icon, .prescription-template-label > span,
+.referral-form-intro > span { font-size: 22px !important; }
+.client-user > b, .client-header-user > b, .profile-avatar, .admin-user > b { font-size: 12px !important; }
+.appointment-date strong { font-size: 19px !important; }
+
+/* Estados de error conservan colores semanticos y contraste accesible. */
+.medical-allergy-alert, .medical-error, .prescription-alert, .client-alert,
+.medical-image-error { color: #8b3f50; background-color: #fff5f4; }
+.medical-allergy-alert strong, .medical-allergy-alert p,
+.medical-error button, .client-alert button, .medical-image-error { color: inherit; }
+
+@media (max-width: 680px) {
+  h1 { font-size: 25px !important; }
+  h2 { font-size: 20px !important; }
+  .admin-header h1, .client-header h1 { font-size: 21px !important; }
+}
+
+
+
+/* Navegacion y acciones principales (agenda, administracion y gestion clinica). */
+.admin-sidebar nav button, .client-sidebar nav button, .logout, .client-logout { font-size: 14px !important; }
+.admin-shell,
+.client-portal {
+  color: var(--ink);
+  background: var(--page);
+}
+.admin-shell {
+  --navy: var(--brand-950);
+  --green: var(--brand-600);
+  --line: #e5ddec;
+}
+.admin-sidebar,
+.clinical-sidebar,
+.client-sidebar {
+  color: #f8f5fb;
+  background: var(--brand-950);
+}
+.admin-sidebar nav button,
+.logout,
+.client-sidebar nav button,
+.client-logout {
+  color: #e5ddec;
+}
+.admin-sidebar nav button.active,
+.admin-sidebar nav button:hover,
+.logout:hover,
+.clinical-sidebar nav button.active,
+.clinical-sidebar nav button:hover,
+.clinical-sidebar .logout:hover,
+.client-sidebar nav button.active,
+.client-sidebar nav button:hover {
+  color: #fff;
+  background: var(--brand-800);
+}
+.admin-brand span,
+.client-brand > span,
+.admin-user > b,
+.profile-avatar,
+.client-user > b,
+.client-header-user > b {
+  color: var(--brand-900);
+  background: var(--brand-200);
+}
+.admin-header,
+.client-header,
+.client-card,
+.user-management,
+.patient-directory,
+.patient-details,
+.patient-create-form,
+.clinical-entry-form {
+  border-color: var(--line);
+}
+.admin-header h1,
+.admin-content h1,
+.admin-content h2,
+.admin-content h3,
+.client-header h1,
+.client-content h1,
+.client-content h2,
+.client-content h3 {
+  color: var(--ink);
+}
+.primary-button,
+.clinical-save-plan-button,
+.login-panel .login-button,
+.client-primary,
+.client-secondary,
+.picker-open,
+.odontogram-save-button {
+  color: #fff;
+  background: var(--brand-700);
+  border-color: var(--brand-700);
+}
+.primary-button:hover,
+.clinical-save-plan-button:hover,
+.login-panel .login-button:hover,
+.client-primary:hover,
+.picker-open:hover,
+.odontogram-save-button:hover {
+  color: #fff;
+  background: var(--brand-800);
+}
+.secondary-button,
+.resource-actions button,
+.week-actions button {
+  border-color: var(--line);
+  color: var(--brand-800);
+  background: #fff;
+}
+.client-secondary { color: var(--brand-800); background: #fff; }
+.client-secondary:hover { color: var(--brand-900); background: var(--brand-50); }
+.week-actions button:hover,
+.role-option.active,
+.type-option.active,
+.slot-cell,
+.patient-directory-item.selected,
+.patient-directory-item:hover {
+  border-color: var(--brand-500);
+  color: var(--brand-800);
+  background: var(--brand-50);
+}
+
+/* Estados seleccionados, etiquetas y elementos de agenda. */
+.day-heading:hover {
+  color: var(--brand-800);
+  background: var(--brand-100);
+}
+.day-heading .day-cta,
+.day-heading b,
+.slot-appointment,
+.client-primary,
+.appointment-date,
+.appointment-status,
+.client-history-row b,
+.medical-tabs button.active,
+.medical-text-button,
+.region-buttons button.active,
+.clinical-status,
+.clinical-date-chip,
+.clinical-save-notice,
+.clinical-add-procedure,
+.clinical-add-phase,
+.prescription-notice,
+.referral-notice,
+.referral-open-record,
+.referral-access-banner {
+  color: var(--brand-800);
+}
+.day-heading b,
+.slot-appointment,
+.appointment-date,
+.appointment-status,
+.medical-tabs button span,
+.region-buttons button.active,
+.clinical-status,
+.clinical-date-chip,
+.referral-status-accepted,
+.referral-access-banner {
+  border-color: var(--brand-200);
+  background-color: var(--brand-100);
+}
+.slot-appointment {
+  border-left-color: var(--brand-500);
+}
+.slot-appointment:hover,
+.tooth:hover,
+.tooth.selected {
+  border-color: var(--brand-500);
+  background: var(--brand-100);
+}
+.slot-cell.selected,
+.slot-cell:hover {
+  border-color: var(--brand-600);
+  color: var(--brand-900);
+  background: var(--brand-200);
+}
+.client-welcome,
+.payment-summary,
+.health-info-banner,
+.prescription-template-label,
+.referral-form-intro,
+.referrals-access-explainer {
+  border-color: var(--brand-200);
+  background: linear-gradient(115deg, var(--brand-100), #fff 78%);
+}
+.welcome-icon,
+.profile-card-icon,
+.payment-icon,
+.client-empty > span,
+.health-form-title > span,
+.client-assignment-note > span,
+.prescription-template-label > span,
+.referral-form-intro > span {
+  color: var(--brand-700);
+  background: var(--brand-200);
+}
+.client-message {
+  color: var(--brand-900);
+  background: var(--brand-100);
+}
+.client-message a,
+.appointment-actions button:first-child,
+.medical-back,
+.clinical-history-actions .secondary-button,
+.referral-access-banner button,
+.resource-item.clickable:hover,
+.patient-directory-item.selected,
+.role-option.active strong,
+.type-option.active strong,
+.client-status-dot,
+.medical-tabs button.active,
+.medical-text-button,
+.region-buttons button.active,
+.clinical-summary-stats strong,
+.clinical-plan-summary section strong,
+.odontogram-tooth-number,
+.prescription-notice,
+.referral-notice,
+.clinical-add-procedure,
+.clinical-add-phase {
+  color: var(--brand-700);
+}
+.client-status-dot { background: var(--brand-500); }
+.referral-access-banner { border-color: var(--brand-200); background: var(--brand-50); }
+.client-welcome, .payment-summary { border-color: var(--brand-200); }
+.clinical-tooth-strip span { border-color: var(--brand-200); background: linear-gradient(145deg, #fff, var(--brand-50)); }
+.clinical-phase-heading > span { color: var(--brand-700); background: var(--brand-100); }
+.clinical-procedure-check input:checked + span { border-color: var(--brand-600); background: var(--brand-600); }
+.odontogram-region-picker button.active, .tooth:hover, .tooth.selected { border-color: var(--brand-500); background: var(--brand-100); }
+.client-time-picker button,
+.slot-picker-grid .slot-cell {
+  border-color: var(--brand-200);
+  color: var(--brand-800);
+  background: var(--brand-50);
+}
+
+/* Superficies y separadores comunes de los modulos clinicos. */
+.client-portal {
+  --client-navy: var(--brand-950);
+  --client-green: var(--brand-700);
+  --client-line: var(--line);
+}
+.login-page,
+.login-page.login-entry-page {
+  background: radial-gradient(
+    ellipse at 10% 20%,
+    var(--brand-100),
+    var(--page) 55%,
+    #f2eef7 100%
+  );
+}
+.login-visual,
+.login-page.login-entry-page .login-visual {
+  background: var(--brand-950);
+}
+.medical-record {
+  color: var(--ink);
+  --clinical-forest: var(--brand-950);
+  --clinical-green: var(--brand-700);
+  --clinical-line: var(--line);
+}
+.medical-tabs button.active {
+  border-bottom-color: var(--brand-600);
+}
+.medical-spinner {
+  border-color: var(--brand-200);
+  border-top-color: var(--brand-600);
+}
+.medical-section-scroll {
+  scrollbar-color: var(--brand-300) var(--brand-50);
+}
+.tooth:hover,
+.tooth.selected,
+.odontogram-region-picker button.active,
+.health-condition-grid label.selected,
+.health-condition-grid label.selected > span,
+.health-consent.accepted,
+.health-consent.accepted > span {
+  border-color: var(--brand-500);
+  color: var(--brand-800);
+  background-color: var(--brand-100);
+}
+.clinical-progress span {
+  background: linear-gradient(90deg, var(--brand-700), var(--brand-500));
+}
+.clinical-timeline-dot {
+  background: var(--brand-500);
+  box-shadow: 0 0 0 1px var(--brand-500);
+}
+.clinical-procedure-check input:checked + span {
+  border-color: var(--brand-600);
+  background: var(--brand-600);
+}
+.clinical-add-procedure,
+.clinical-add-phase,
+.health-add-medication {
+  border-color: var(--brand-300);
+  color: var(--brand-800);
+  background: var(--brand-50);
+}
+.referral-sharing-note,
+.referral-access-banner {
+  border-left-color: var(--brand-500);
+}
+:focus-visible {
+  outline-color: var(--brand-500);
+}
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--brand-600);
+}
+
+@media (max-width: 680px) {
+  h1 { font-size: 25px !important; }
+  h2 { font-size: 20px !important; }
+  .admin-header h1, .client-header h1 { font-size: 21px !important; }
+}
+
+
+/* Normalizacion final: DM Sans y escala de texto global consistente. */
+*, *::before, *::after {
+  font-family: var(--font-app) !important;
+  font-size: inherit !important;
+}
+body { font-size: 14px !important; }
+h1 { font-size: clamp(26px, 2.2vw, 30px) !important; line-height: 1.2; }
+h2 { font-size: 22px !important; line-height: 1.3; }
+h3 { font-size: 17px !important; line-height: 1.35; }
+small, .eyebrow, .nav-title, .nav-label, .client-nav-label { font-size: 12px !important; }
+.admin-header h1, .client-header h1 { font-size: 24px !important; }
+.client-welcome h2 { font-size: clamp(22px, 2.5vw, 28px) !important; }
+.client-section-heading h2, .client-history h2, .medical-section-heading h2 { font-size: 19px !important; }
+.medical-patient-info h2, .medical-editor h2, .client-dialog > header h2 { font-size: 21px !important; }
+.login-panel h1 { font-size: 28px !important; }
+.login-visual > div:last-child strong { font-size: clamp(32px, 4vw, 52px) !important; }
+.entry-option-copy strong { font-size: 16px !important; }
+.entry-option-copy small, .login-panel > small { font-size: 12px !important; }
+.client-user > b, .client-header-user > b, .profile-avatar, .admin-user > b { font-size: 12px !important; }
+.appointment-date strong { font-size: 19px !important; }
+.payment-summary > div > strong { font-size: 26px !important; }
+.clinical-summary-stats strong, .health-completion strong { font-size: 19px !important; }
+.clinical-plan-summary section strong { font-size: 21px !important; }
+.odontogram-tooth-number { font-size: 17px !important; }
+.entry-option-icon, .welcome-icon, .profile-card-icon, .payment-icon,
+.medical-empty span, .allergy-icon, .prescription-template-label > span,
+.referral-form-intro > span { font-size: 22px !important; }
+.entry-option-arrow { font-size: 20px !important; }
+.tooth-x { font-size: 41px !important; line-height: 42px; }
+.tooth-sealant { font-size: 13px !important; }
+.tooth-implant { font-size: 24px !important; }
+.referral-card-patient .medical-avatar { font-size: 14px !important; }
+.medical-alert-priority, .medical-tabs button span, .referrals-nav-count { font-size: 12px !important; }
+
+/* Paleta morada aplicada a elementos de marca, seleccion y estados clinicos. */
+.admin-shell, .client-portal, .login-page { color: var(--ink); background-color: var(--page); }
+.admin-sidebar, .clinical-sidebar, .client-sidebar,
+.login-page.login-entry-page .login-visual { color: #f8f5fb; background-color: var(--brand-950); }
+.admin-sidebar nav button.active, .admin-sidebar nav button:hover, .logout:hover,
+.clinical-sidebar nav button.active, .clinical-sidebar nav button:hover,
+.client-sidebar nav button.active, .client-sidebar nav button:hover,
+.entry-option, .entry-option:nth-child(2), .entry-option:nth-child(3) {
+  color: #fff; border-color: var(--brand-800); background-color: var(--brand-800);
+}
+.entry-option:hover, .entry-option:focus-visible,
+.entry-option:nth-child(2):hover, .entry-option:nth-child(3):hover { border-color: var(--brand-700); background: var(--brand-700); }
+.primary-button, .clinical-save-plan-button, .login-panel .login-button,
+.client-primary, .picker-open, .odontogram-save-button {
+  color: #fff; border-color: var(--brand-700); background: var(--brand-700);
+}
+.primary-button:hover, .clinical-save-plan-button:hover, .login-panel .login-button:hover,
+.client-primary:hover, .picker-open:hover, .odontogram-save-button:hover { color: #fff; background: var(--brand-800); }
+.admin-brand span, .client-brand > span, .admin-user > b, .profile-avatar,
+.client-user > b, .client-header-user > b { color: var(--brand-900); background: var(--brand-200); }
+.admin-shell, .client-portal { --navy: var(--brand-950); --green: var(--brand-700); --line: var(--line); }
+.client-portal { --client-navy: var(--brand-950); --client-green: var(--brand-700); --client-line: var(--line); }
+.admin-header, .client-header, .client-card, .user-management, .patient-directory,
+.patient-details, .patient-create-form, .clinical-entry-form { border-color: var(--line); }
+.day-heading:hover, .week-actions button:hover, .role-option.active,
+.type-option.active, .patient-directory-item.selected, .patient-directory-item:hover,
+.slot-cell:hover, .slot-cell.selected, .tooth:hover, .tooth.selected,
+.odontogram-region-picker button.active, .health-condition-grid label.selected,
+.health-consent.accepted { color: var(--brand-800); border-color: var(--brand-500); background: var(--brand-100); }
+.day-heading .day-cta, .medical-back, .medical-tabs button.active,
+.medical-text-button, .region-buttons button.active, .client-primary,
+.client-history-row b, .clinical-status, .clinical-date-chip, .clinical-save-notice,
+.clinical-add-procedure, .clinical-add-phase, .prescription-notice,
+.referral-notice, .referral-open-record, .health-add-medication { color: var(--brand-700); }
+.slot-appointment, .appointment-date, .appointment-status, .day-heading b,
+.medical-tabs button span, .region-buttons button.active,
+.clinical-status, .clinical-date-chip, .referral-status-accepted {
+  color: var(--brand-800); border-color: var(--brand-200); background-color: var(--brand-100);
+}
+.slot-appointment { border-left-color: var(--brand-500); }
+.client-welcome, .payment-summary, .health-info-banner, .prescription-template-label,
+.referral-form-intro, .referrals-access-explainer {
+  border-color: var(--brand-200); background: linear-gradient(115deg, var(--brand-100), #fff 78%);
+}
+.welcome-icon, .profile-card-icon, .payment-icon, .client-empty > span,
+.health-form-title > span, .client-assignment-note > span,
+.prescription-template-label > span, .referral-form-intro > span {
+  color: var(--brand-700); background: var(--brand-200);
+}
+.client-message { color: var(--brand-900); background: var(--brand-100); }
+.client-message a, .appointment-actions button:first-child, .client-attach,
+.medical-back, .medical-text-button, .referral-access-banner button { color: var(--brand-700); }
+.client-time-picker button, .slot-picker-grid .slot-cell { border-color: var(--brand-200); color: var(--brand-800); background: var(--brand-50); }
+.login-page, .login-page.login-entry-page { background: radial-gradient(ellipse at 10% 20%, var(--brand-100), var(--page) 55%, #f2eef7 100%); }
+.client-status-dot, .clinical-timeline-dot { background: var(--brand-500); }
+.clinical-progress span { background: linear-gradient(90deg, var(--brand-700), var(--brand-500)); }
+.clinical-phase-heading > span { color: var(--brand-700); background: var(--brand-100); }
+.clinical-procedure-check input:checked + span { border-color: var(--brand-600); background: var(--brand-600); }
+.clinical-add-procedure, .clinical-add-phase, .health-add-medication { border-color: var(--brand-300); background: var(--brand-50); }
+.medical-spinner { border-color: var(--brand-200); border-top-color: var(--brand-600); }
+.medical-section-scroll { scrollbar-color: var(--brand-300) var(--brand-50); }
+.referral-sharing-note, .referral-access-banner { border-left-color: var(--brand-500); }
+:focus-visible { outline-color: var(--brand-500); }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--brand-600); }
+
+@media (max-width: 680px) {
+  h1 { font-size: 25px !important; }
+  h2 { font-size: 20px !important; }
+  .admin-header h1, .client-header h1 { font-size: 21px !important; }
+}
+
+
+/* Normalizacion final de font-size: escala comun sin afectar el diseno de controles. */
+body, p, label, input, select, textarea, button, td, th, dt, dd, time,
+.admin-content span, .admin-content strong, .admin-content b,
+.client-content span, .client-content strong, .client-content b,
+.medical-record span, .medical-record strong, .medical-record b { font-size: 14px !important; }
+small, .eyebrow, .nav-title, .nav-label, .client-nav-label,
+.admin-content small, .client-content small, .medical-record small { font-size: 12px !important; }
+h1 { font-size: clamp(26px, 2.2vw, 30px) !important; }
+h2 { font-size: 22px !important; }
+h3 { font-size: 17px !important; }
+.admin-header h1, .client-header h1 { font-size: 24px !important; }
+.client-welcome h2 { font-size: clamp(22px, 2.5vw, 28px) !important; }
+.client-section-heading h2, .client-history h2, .medical-section-heading h2 { font-size: 19px !important; }
+.medical-patient-info h2, .medical-editor h2, .client-dialog > header h2 { font-size: 21px !important; }
+.login-panel h1 { font-size: 28px !important; }
+.login-logo { font-size: 24px !important; }
+.login-visual > div:last-child strong { font-size: clamp(32px, 4vw, 52px) !important; }
+.entry-option-copy strong { font-size: 16px !important; }
+.entry-option-copy small, .login-panel > small { font-size: 12px !important; }
+.appointment-date strong { font-size: 19px !important; }
+.payment-summary > div > strong { font-size: 26px !important; }
+.clinical-summary-stats strong, .health-completion strong { font-size: 19px !important; }
+.clinical-plan-summary section strong { font-size: 21px !important; }
+.odontogram-tooth-number { font-size: 17px !important; }
+.entry-option-icon, .welcome-icon, .profile-card-icon, .payment-icon,
+.medical-empty span, .allergy-icon, .prescription-template-label > span,
+.referral-form-intro > span { font-size: 22px !important; }
+.entry-option-arrow { font-size: 20px !important; }
+.tooth-x { font-size: 41px !important; line-height: 42px; }
+.tooth-sealant { font-size: 13px !important; }
+.tooth-implant { font-size: 24px !important; }
+.medical-alert-priority, .medical-tabs button span, .referrals-nav-count { font-size: 12px !important; }
+.referral-card-patient .medical-avatar { font-size: 14px !important; }
+.medical-allergy-alert strong, .medical-allergy-alert p { font-size: 14px !important; }
+@media (max-width: 680px) {
+  h1 { font-size: 25px !important; }
+  h2 { font-size: 20px !important; }
+  .admin-header h1, .client-header h1 { font-size: 21px !important; }
+}
+
+
+/* Detalles restantes de equipo, perfil, recursos, accesos y agenda personal. */
+.profile-chip { border-color: var(--line); background: var(--brand-50); }
+.profile-avatar, .header-status > b { color: var(--brand-900); background: var(--brand-200); }
+.profile-chip strong, .detail-profile strong, .detail-list dd { color: var(--ink); }
+.profile-chip small, .detail-profile span, .header-status { color: var(--muted); }
+.header-status > span { background: var(--brand-500); }
+.role-option.active { border-color: var(--brand-500); background: var(--brand-50); box-shadow: 0 0 0 3px var(--brand-100); }
+.role-option.active strong { color: var(--brand-700); }
+.resource-icon { color: var(--brand-800); background: var(--brand-100); }
+.resource-item.clickable:hover { border-color: var(--brand-300); box-shadow: 0 5px 16px rgba(86, 58, 122, .12); }
+.resource-item i { color: var(--brand-600); }
+.week-actions button:hover { border-color: var(--brand-300); color: var(--brand-800); background: var(--brand-50); }
+.week-free { color: var(--brand-500); }
+.week-slot:hover .week-free { border-color: var(--brand-300); background: var(--brand-50); }
+.week-slot.occupied { border-left-color: var(--brand-500); background: var(--brand-100); }
+.week-appointment, .week-appointment span, .week-appointment small { color: var(--brand-800); }
+.week-appointment i { color: var(--brand-600); }
+.week-appointment em { color: #b16a65; }
+
+/* Panel de acceso: marca morada y tonos de apoyo lilas en toda la vista. */
+.login-page .login-visual, .login-page.login-entry-page .login-visual { color: #f8f5fb; background: var(--brand-950); }
+.login-visual strong { color: #d9c9ee; }
+.login-visual p, .login-page.login-entry-page .login-visual > div:last-child p { color: #e3d9ed; }
+.login-visual > div:last-child span, .login-logo:first-letter { color: #d9c9ee; }
+.login-panel h1 { color: var(--ink); }
+.login-panel > p:not(.login-switch), .login-panel > small, .username-hint { color: var(--muted); }
+.login-panel label, .client-field { color: var(--brand-900); }
+.login-panel input, .client-field input, .client-field select, .client-field textarea { border-color: var(--line); color: var(--ink); }
+.login-panel input:focus, .client-field input:focus, .client-field select:focus,
+.client-field textarea:focus { border-color: var(--brand-500); box-shadow: 0 0 0 3px var(--brand-100); }
+.login-panel .login-button, .login-page.login-entry-page .login-panel .login-button { color: #fff; background: var(--brand-700); }
+.login-panel .login-button:hover, .login-panel .login-button:focus-visible { background: var(--brand-800); outline-color: var(--brand-300); }
+.login-switch button, .registration-options button { color: var(--brand-700); }
+.registration-options button:hover { border-color: var(--brand-300); color: var(--brand-800); background: var(--brand-50); }
+.entry-option, .entry-option:nth-child(2), .entry-option:nth-child(3) { border-color: var(--brand-800); background: var(--brand-800); }
+.entry-option:hover, .entry-option:focus-visible, .entry-option:nth-child(2):hover,
+.entry-option:nth-child(3):hover, .entry-option:nth-child(2):focus-visible,
+.entry-option:nth-child(3):focus-visible { border-color: var(--brand-700); background: var(--brand-700); }
+.registration-disclaimer { color: var(--muted); background: var(--brand-50); }
+
+/* Perfil de paciente y odontograma: neutralizar verdes de tarjetas e iconos. */
+.medical-record, .medical-record h2, .medical-record h3 { color: var(--ink); }
+.medical-patient-header, .medical-panel, .odontogram-board, .odontogram-editor,
+.odontogram-arch { border-color: var(--line); }
+.medical-avatar, .tooth-detail, .medical-appointment-chip { color: var(--brand-800); background: var(--brand-100); }
+.medical-tabs button.active { color: var(--brand-700); border-bottom-color: var(--brand-600); }
+.medical-tabs button span { color: var(--brand-800); background: var(--brand-100); }
+.medical-empty, .medical-loading, .medical-retention, .medical-demographics,
+.medical-section-heading p, .odontogram-legend, .arch-label, .tooth-detail span,
+.record-date, .record-description p, .medical-record-item > div > p { color: var(--muted); }
+.medical-empty span { color: var(--brand-500); }
+.tooth { color: var(--muted); }
+.tooth-shape { stroke: var(--brand-300); }
+.tooth-face { stroke: var(--brand-300); }
+.tooth-crown, .tooth-root, .tooth-x, .tooth-sealant, .tooth-implant { color: var(--brand-600); border-color: var(--brand-600); background-color: transparent; }
+.tooth-detail { background: var(--brand-50); }
+.region-buttons button, .odontogram-region-picker button { border-color: var(--line); color: var(--brand-800); }
+.region-buttons button.active, .odontogram-region-picker button.active { border-color: var(--brand-500); color: var(--brand-800); background: var(--brand-100); }
+.medical-text-button, .record-actions button:first-child { color: var(--brand-700); }
+.medical-spinner { border-color: var(--brand-200); border-top-color: var(--brand-600); }
+.medical-section-scroll { scrollbar-color: var(--brand-300) var(--brand-50); }
+
+/* Equipo, usuarios y accesos: sin fondos de estado verdes heredados. */
+.user-management { border-color: var(--line); box-shadow: 0 2px 12px rgba(86, 58, 122, .06); }
+.user-management-heading, .user-form, .user-form-actions, .user-list-heading { border-color: var(--line); }
+.user-state, .user-notice { border-color: var(--brand-200); color: var(--brand-800); background: var(--brand-100); }
+.user-table th, .user-table td { border-color: var(--line); }
+.user-table thead th { background: var(--brand-50); }
+.patient-directory-item.selected, .patient-directory-item:hover { border-color: var(--brand-500); background: var(--brand-50); }
+.patient-directory-item, .patient-details, .patient-create-form, .clinical-entry-form,
+.clinical-history-entry, .patient-appointment-list li { border-color: var(--line); }
+.notice-inline { border-color: var(--brand-300); color: var(--brand-800); background: var(--brand-100); }
+.clinical-sidebar { background: var(--brand-950); }
+.clinical-sidebar .clinical-return { border-top-color: var(--brand-300); }
+
+/* Alertas y feedback conservan sus significados, no el verde de marca anterior. */
+.medical-allergy-alert, .medical-error, .prescription-alert, .client-alert,
+.medical-image-error { color: #8b3f50; background-color: #fff5f4; }
+.medical-error button { color: #8b3f50; }
+.medical-notice, .clinical-save-notice, .prescription-notice, .referral-notice { color: var(--brand-700); }
+
+
+/* Ultimo ajuste de contraste en las pantallas citadas. */
+.medical-record :is(h1, h2, h3, p, span, strong, b, small, dt, dd, label, button, time) { color: var(--ink); }
+.medical-record .eyebrow, .medical-record .medical-demographics,
+.medical-record .medical-section-heading p, .medical-record .medical-loading,
+.medical-record .medical-retention, .medical-record .odontogram-legend,
+.medical-record .arch-label, .medical-record .record-date,
+.medical-record .record-description p, .medical-record .tooth-detail span { color: var(--muted); }
+.medical-record .medical-tabs button.active, .medical-record .medical-back,
+.medical-record .medical-text-button, .medical-record .region-buttons button.active,
+.medical-record .odontogram-region-picker button.active,
+.medical-record .clinical-plan-summary section strong,
+.medical-record .clinical-summary-stats strong,
+.medical-record .clinical-save-plan-button,
+.medical-record .clinical-status, .medical-record .clinical-date-chip,
+.medical-record .prescription-notice, .medical-record .referral-notice { color: var(--brand-700); }
+.medical-record .medical-avatar, .medical-record .medical-appointment-chip,
+.medical-record .tooth-detail, .medical-record .clinical-phase-heading > span,
+.medical-record .odontogram-tooth-number { color: var(--brand-800); background-color: var(--brand-100); }
+.medical-record .medical-panel, .medical-record .medical-patient-header,
+.medical-record .odontogram-arch, .medical-record .odontogram-board,
+.medical-record .odontogram-editor { border-color: var(--line); }
+.medical-record .medical-allergy-alert, .medical-record .medical-error,
+.medical-record .prescription-alert, .medical-record .medical-image-error { color: #8b3f50; background-color: #fff5f4; }
+.medical-record .allergy-icon { color: #fff; background: #b85755; }
+.medical-record .mark-caries, .medical-record .mark-crownNeeded,
+.medical-record .mark-endodonticsNeeded { border-color: #b85755; background: #cd706d; }
+.medical-record .mark-restoration, .medical-record .mark-absent,
+.medical-record .mark-crown, .medical-record .mark-endodontics,
+.medical-record .mark-sealant, .medical-record .mark-implant { border-color: var(--brand-600); background: var(--brand-500); }
+.medical-record .tooth-caries .tooth-face { fill: #cd706d; stroke: #b85755; }
+.medical-record .tooth-restoration .tooth-face { fill: var(--brand-500); stroke: var(--brand-600); }
+.medical-record .tooth-crown.needed, .medical-record .tooth-root.needed { border-color: #b85755; background-color: #b85755; }
+.medical-record .tooth-crown, .medical-record .tooth-root { border-color: var(--brand-600); background-color: var(--brand-600); }
+.user-state, .user-notice { border-color: var(--brand-200); color: var(--brand-800); background: var(--brand-100); }
+.user-state.inactive { color: #8b3f50; background: #fff5f4; }
+.profile-chip { background-color: var(--brand-50); }
+.header-status > b, .profile-avatar { background-color: var(--brand-200); }
+.resource-icon:not(.inactive) { color: var(--brand-800); background-color: var(--brand-100); }
+.week-slot.occupied, .admin-shell .slot-appointment { border-left-color: var(--brand-500); background-color: var(--brand-100); }
+.week-appointment, .admin-shell .slot-appointment { color: var(--brand-800); }
+.login-page .login-visual strong { color: #d9c9ee; }
+.login-page .login-visual span { color: #f8f5fb; }
+.login-page .login-panel .login-button { color: #fff; background-color: var(--brand-700); }
+.login-page .login-panel .login-button:hover { background-color: var(--brand-800); }
+
+
+/* Perfil del paciente (directorio clínico): eliminar los últimos acentos verdes. */
+.patient-management { color: var(--ink); }
+.patient-management .patient-directory,
+.patient-management .patient-details,
+.patient-management .patient-create-form,
+.patient-management .clinical-entry-form,
+.patient-management .clinical-history-entry,
+.patient-management .patient-appointment-list li {
+  border-color: var(--line);
+  color: var(--ink);
+}
+.patient-management .patient-summary h3,
+.patient-management .patient-subsection h3,
+.patient-management .clinical-entry-form h3 { color: var(--brand-900); }
+.patient-management .patient-directory-item { border-color: var(--line); color: var(--ink); }
+.patient-management .patient-directory-item span,
+.patient-management .patient-appointment-list li span,
+.patient-management .clinical-history-entry header span,
+.patient-management .patient-contact dt,
+.patient-management .clinical-history-entry dt { color: var(--brand-700); }
+.patient-management .patient-directory-item.selected,
+.patient-management .patient-directory-item:hover {
+  border-color: var(--brand-500);
+  color: var(--brand-900);
+  background: var(--brand-100);
+}
+.patient-management .patient-contact dd,
+.patient-management .clinical-history-entry dd,
+.patient-management .patient-appointment-list li strong,
+.patient-management .clinical-history-entry header strong { color: var(--ink); }
+.patient-management .patient-appointment-list li,
+.patient-management .clinical-history-entry { background: var(--brand-50); }
+.patient-management .patient-form-actions .secondary-button { color: var(--brand-700); }
+.patient-management .notice-inline {
+  border-color: var(--brand-300);
+  color: var(--brand-800);
+  background: var(--brand-100);
+}
+.patient-management :is(i, svg, [class*="icon"]) { color: var(--brand-600); }
+.patient-management .primary-button { color: #fff; background: var(--brand-700); }
+.patient-management .primary-button:hover { color: #fff; background: var(--brand-800); }

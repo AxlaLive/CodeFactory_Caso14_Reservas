@@ -7,6 +7,8 @@ export default function AppointmentDetail({
   onEdit,
   onReschedule,
   onCancel,
+  canManageMedical = false,
+  onManageMedical,
 }) {
   return (
     <div className="modal-layer" onMouseDown={onClose}>
@@ -88,10 +90,22 @@ export default function AppointmentDetail({
         </dl>
 
         {readOnly ? (
-          <p className="field-hint">
-            Vista de solo lectura. La gestion de la agenda general corresponde
-            al recepcionista.
-          </p>
+          <footer className="modal-footer detail-actions">
+            {canManageMedical ? (
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => onManageMedical(appointment)}
+              >
+                Gestionar información médica
+              </button>
+            ) : (
+              <p className="field-hint">
+                Vista de solo lectura. La gestion de la agenda general corresponde
+                al recepcionista.
+              </p>
+            )}
+          </footer>
         ) : (
           <footer className="modal-footer detail-actions">
             <button

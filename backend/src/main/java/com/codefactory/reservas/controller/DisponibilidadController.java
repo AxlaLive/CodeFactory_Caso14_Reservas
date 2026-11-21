@@ -28,9 +28,15 @@ public class DisponibilidadController {
 
     @GetMapping
     public ResponseEntity<List<DisponibilidadResponse>> consultar(
-            @RequestParam Long profesionalId,
-            @RequestParam LocalDate inicio,
-            @RequestParam LocalDate fin) {
+            @RequestParam(required = false) Long profesionalId,
+            @RequestParam(required = false) LocalDate inicio,
+            @RequestParam(required = false) LocalDate fin) {
+        if (profesionalId == null && inicio == null && fin == null) {
+            return ResponseEntity.ok(disponibilidadService.consultarTodas());
+        }
+        if (profesionalId == null || inicio == null || fin == null) {
+            return ResponseEntity.badRequest().build();
+        }
         return ResponseEntity.ok(disponibilidadService.consultar(profesionalId, inicio, fin));
     }
 

@@ -214,4 +214,34 @@ class CitaServiceTest {
                 .isInstanceOf(BusinessConflictException.class)
                 .hasMessageContaining("profesional");
     }
+
+    @Test
+    void shouldUpdateAndCancelAnAppointment() {
+        Cita saved = citaService.crearDesdeAgenda(new CitaRequest(
+                LocalDate.of(2026, 9, 20),
+                LocalTime.of(9, 0),
+                profesional.getId(),
+                espacio.getId(),
+                paciente.getId(),
+                servicio.getId(),
+                "Consulta inicial"
+        ));
+
+        Cita updated = citaService.actualizarDesdeAgenda(saved.getId(), new CitaRequest(
+                LocalDate.of(2026, 9, 21),
+                LocalTime.of(10, 0),
+                profesional.getId(),
+                espacio.getId(),
+                paciente.getId(),
+                servicio.getId(),
+                "Consulta reprogramada"
+        )).orElseThrow();
+
+        assertThat(updated.getId()).isEqualTo(saved.getId());
+        assertThat(updated.getFecha()).isEqualTo(LocalDate.of(2026, 9, 21));
+        assertThat(updated.getHoraInicio()).isEqualTo(LocalTime.of(10, 0));
+
+        Cita cancelled = citaService.cancelar(saved.getId()).orElseThrow();
+        assertThat(cancelled.getEstado()).isEqualTo("CANCELADA");
+    }
 }
