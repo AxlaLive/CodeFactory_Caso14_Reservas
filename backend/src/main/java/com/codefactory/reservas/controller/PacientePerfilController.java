@@ -3,6 +3,7 @@ package com.codefactory.reservas.controller;
 import com.codefactory.reservas.dto.PacientePerfilResponse;
 import com.codefactory.reservas.dto.PacientePerfilResponse.CitaResumenResponse;
 import com.codefactory.reservas.dto.PacientePerfilResponse.HistorialCitaResponse;
+import com.codefactory.reservas.dto.HistoriaClinicaResponse;
 import com.codefactory.reservas.exception.ValidationException;
 import com.codefactory.reservas.service.PacientePerfilService;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +18,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/pacientes/me")
-@PreAuthorize("hasRole('PACIENTE')")
+@PreAuthorize("hasAnyRole('PACIENTE', 'CLIENTE')")
 public class PacientePerfilController {
 
     private final PacientePerfilService pacientePerfilService;
@@ -54,6 +55,18 @@ public class PacientePerfilController {
             String documentoAutenticado = authentication != null ? authentication.getName() : null;
             List<HistorialCitaResponse> historial = pacientePerfilService.obtenerHistorialClinico(documentoAutenticado);
             return ResponseEntity.ok(historial);
+        } catch (ValidationException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/historias-clinicas")
+    public ResponseEntity<?> consultarNotasClinicas(Authentication authentication) {
+        try {
+            String usernameAutenticado = authentication != null ? authentication.getName() : null;
+            List<HistoriaClinicaResponse> historias =
+                    pacientePerfilService.obtenerNotasClinicas(usernameAutenticado);
+            return ResponseEntity.ok(historias);
         } catch (ValidationException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }

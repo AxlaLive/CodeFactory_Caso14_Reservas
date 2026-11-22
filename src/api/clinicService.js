@@ -571,7 +571,9 @@ export const authService = {
   login: async ({ username, password }) => {
     currentSession = null
     clearPersistedSession()
-    const demoSession = demoSessionForCredentials(username, password)
+    const demoSession = import.meta.env.DEV
+      ? demoSessionForCredentials(username, password)
+      : null
     if (demoSession) {
       currentSession = demoSession
       return demoSession
@@ -657,7 +659,7 @@ export const patientPortalService = {
   },
   getClinicalHistory: async (session) => {
     if (!session?.token) return null
-    const response = await fetch(`${API_BASE_URL}/pacientes/me/historial-clinico`, {
+    const response = await fetch(`${API_BASE_URL}/pacientes/me/historias-clinicas`, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.token}`,

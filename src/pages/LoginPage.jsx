@@ -76,7 +76,7 @@ export default function LoginPage({ onLogin }) {
         <button className="primary-button login-button" type="submit">
           Ingresar <span>→</span>
         </button>
-        <section className="demo-access" aria-labelledby="demo-access-title">
+        {import.meta.env.DEV && <section className="demo-access" aria-labelledby="demo-access-title">
           <h2 id="demo-access-title">Acceso local para pruebas</h2>
           <p>Disponible aunque el servidor o la base de datos no respondan. Los cambios se guardan en este navegador.</p>
           <div className="demo-access-options">
@@ -97,7 +97,7 @@ export default function LoginPage({ onLogin }) {
             ))}
           </div>
           <small>Selecciona un perfil para ingresar con una cuenta de prueba.</small>
-        </section>
+        </section>}
       </form>
     </main>
   )

@@ -316,7 +316,7 @@ export default function PatientManagement({ session }) {
                 </p>
                 {session.role === "admin" && (
                   <p className="patient-ai-disclaimer">
-                    Al generar, se enviarán a Azure OpenAI notas con identificadores directos detectables enmascarados. El resumen no se guarda.
+                    Al generar, se enviarán al proveedor de IA configurado notas con identificadores directos detectables enmascarados. El resumen no se guarda.
                   </p>
                 )}
                 {summaryError && <div className="form-error" role="alert">{summaryError}</div>}

@@ -1,12 +1,16 @@
 package com.codefactory.reservas.service;
 
 import com.codefactory.reservas.domain.Cita;
+import com.codefactory.reservas.domain.Cliente;
 import com.codefactory.reservas.domain.Paciente;
 import com.codefactory.reservas.dto.PacientePerfilResponse;
 import com.codefactory.reservas.dto.PacientePerfilResponse.CitaResumenResponse;
 import com.codefactory.reservas.dto.PacientePerfilResponse.HistorialCitaResponse;
+import com.codefactory.reservas.dto.HistoriaClinicaResponse;
 import com.codefactory.reservas.exception.ValidationException;
 import com.codefactory.reservas.repository.CitaRepository;
+import com.codefactory.reservas.repository.ClienteRepository;
+import com.codefactory.reservas.repository.HistoriaClinicaRepository;
 import com.codefactory.reservas.repository.PacienteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,12 +22,18 @@ import java.util.List;
 public class PacientePerfilService {
 
     private final PacienteRepository pacienteRepository;
+    private final ClienteRepository clienteRepository;
     private final CitaRepository citaRepository;
+    private final HistoriaClinicaRepository historiaClinicaRepository;
 
     public PacientePerfilService(PacienteRepository pacienteRepository,
-                                 CitaRepository citaRepository) {
+                                 ClienteRepository clienteRepository,
+                                 CitaRepository citaRepository,
+                                 HistoriaClinicaRepository historiaClinicaRepository) {
         this.pacienteRepository = pacienteRepository;
+        this.clienteRepository = clienteRepository;
         this.citaRepository = citaRepository;
+        this.historiaClinicaRepository = historiaClinicaRepository;
     }
 
     @Transactional(readOnly = true)
@@ -72,14 +82,24 @@ public class PacientePerfilService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public List<HistoriaClinicaResponse> obtenerNotasClinicas(String usernameAutenticado) {
+        Paciente paciente = buscarPacienteAutenticado(usernameAutenticado);
+        return historiaClinicaRepository.findByPacienteIdOrderByCreadoEnDesc(paciente.getId()).stream()
+                .map(HistoriaClinicaResponse::from)
+                .toList();
+    }
+
     private Paciente buscarPacienteAutenticado(String usernameAutenticado) {
         if (usernameAutenticado == null || usernameAutenticado.isBlank()) {
             throw new ValidationException("No se pudo identificar al paciente autenticado.");
         }
 
         Paciente paciente = pacienteRepository.findByDocumento(usernameAutenticado)
+                .or(() -> clienteRepository.findByCorreoIgnoreCase(usernameAutenticado)
+                        .map(Cliente::getPaciente))
                 .orElseThrow(() -> new ValidationException(
-                        "No existe un paciente registrado con el documento: " + usernameAutenticado
+                        "No existe un paciente vinculado a la cuenta autenticada."
                 ));
 
         if (!paciente.isActivo()) {

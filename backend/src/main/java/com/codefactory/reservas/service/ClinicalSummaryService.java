@@ -12,6 +12,7 @@ import com.codefactory.reservas.repository.HistoriaClinicaRepository;
 import com.codefactory.reservas.repository.PacienteRepository;
 import com.codefactory.reservas.repository.ProfesionalRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class ClinicalSummaryService {
     private final CitaRepository citaRepository;
     private final ClinicalSummarySanitizer sanitizer;
     private final ClinicalSummaryGenerator summaryGenerator;
+    private final String provider;
 
     public ClinicalSummaryService(
             HistoriaClinicaRepository historiaRepository,
@@ -41,7 +43,8 @@ public class ClinicalSummaryService {
             ProfesionalRepository profesionalRepository,
             CitaRepository citaRepository,
             ClinicalSummarySanitizer sanitizer,
-            ClinicalSummaryGenerator summaryGenerator) {
+            ClinicalSummaryGenerator summaryGenerator,
+            @Value("${ai.provider:groq}") String provider) {
         this.historiaRepository = historiaRepository;
         this.pacienteRepository = pacienteRepository;
         this.clienteRepository = clienteRepository;
@@ -49,6 +52,7 @@ public class ClinicalSummaryService {
         this.citaRepository = citaRepository;
         this.sanitizer = sanitizer;
         this.summaryGenerator = summaryGenerator;
+        this.provider = provider;
     }
 
     public ClinicalSummaryResponse generate(ClinicalSummaryRequest request) {
@@ -111,7 +115,8 @@ public class ClinicalSummaryService {
         if (summary == null || summary.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "El proveedor de IA devolvió un resumen vacío.");
         }
-        return new ClinicalSummaryResponse(summary, LocalDateTime.now(), "Azure OpenAI");
+        String providerName = "azure".equalsIgnoreCase(provider) ? "Azure OpenAI" : "Groq";
+        return new ClinicalSummaryResponse(summary, LocalDateTime.now(), providerName);
     }
 
     private String formatHistory(HistoriaClinica history, Paciente patient) {

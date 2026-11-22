@@ -4,6 +4,7 @@ import {
   authService,
   blockService,
   clinicalSummaryService,
+  patientPortalService,
   professionalService,
   spaceService,
 } from '../api/clinicService'
@@ -46,9 +47,42 @@ export default function ClientPage({ session, onUpdateSession, onLogout }) {
   const [clinicalSummary, setClinicalSummary] = useState(null)
   const [summaryBusy, setSummaryBusy] = useState(false)
   const [summaryError, setSummaryError] = useState('')
+  const [clinicalRecords, setClinicalRecords] = useState([])
+  const [clinicalRecordsLoading, setClinicalRecordsLoading] = useState(false)
 
   useEffect(() => {
     let mounted = true
+    if (session.role === 'client') {
+      setClinicalRecordsLoading(true)
+      Promise.all([
+        patientPortalService.getProfile(session),
+        patientPortalService.getClinicalHistory(session),
+      ]).then(([profileResponse, nextClinicalRecords]) => {
+        if (!mounted) return
+        const upcoming = (profileResponse.proximasCitas || [])
+          .map((item) => mapPatientPortalAppointment(item, session))
+        const history = (profileResponse.historialClinico || [])
+          .map((item) => mapPatientPortalAppointment(item, session))
+        setAppointments([...upcoming, ...history])
+        setClinicalRecords(nextClinicalRecords || [])
+        setProfile((current) => ({ ...current, name: profileResponse.nombre || current.name }))
+        onUpdateSession({
+          ...session,
+          id: String(profileResponse.id),
+          name: profileResponse.nombre || session.name,
+          identification: profileResponse.documento,
+        })
+        setLoading(false)
+      }).catch((error) => {
+        if (!mounted) return
+        setPageError(`No fue posible cargar el portal: ${error.message}`)
+        setLoading(false)
+      }).finally(() => {
+        if (mounted) setClinicalRecordsLoading(false)
+      })
+      return () => { mounted = false }
+    }
+
     Promise.all([
       appointmentService.list(),
       professionalService.list(),
@@ -328,7 +362,7 @@ export default function ClientPage({ session, onUpdateSession, onLogout }) {
             {view === 'appointments' && <AppointmentsView appointments={upcomingAppointments} history={historyAppointments} onBook={() => startBooking()} onReschedule={startBooking} onCancel={cancelAppointment} />}
             {view === 'profile' && <ProfileView session={session} profile={profile} onChange={(field, value) => setProfile((current) => ({ ...current, [field]: value }))} onSubmit={saveProfile} busy={busy} />}
             {view === 'forms' && <MedicalForm value={medicalForm} onChange={(field, value) => setMedicalForm((current) => ({ ...current, [field]: value }))} onSubmit={saveMedicalForm} busy={busy} />}
-            {view === 'clinical-history' && <PatientClinicalHistory summary={clinicalSummary} busy={summaryBusy} error={summaryError} onGenerate={generateClinicalSummary} />}
+            {view === 'clinical-history' && <PatientClinicalHistory records={clinicalRecords} recordsLoading={clinicalRecordsLoading} summary={clinicalSummary} busy={summaryBusy} error={summaryError} onGenerate={generateClinicalSummary} />}
             {view === 'payments' && <PaymentsView appointments={payableAppointments} />}
             {view === 'messages' && <MessagesView messages={messages} text={messageText} attachment={attachment} onText={setMessageText} onAttachment={setAttachment} onSubmit={submitMessage} />}
           </>}
@@ -353,25 +387,59 @@ export default function ClientPage({ session, onUpdateSession, onLogout }) {
   )
 }
 
-function PatientClinicalHistory({ summary, busy, error, onGenerate }) {
+function PatientClinicalHistory({ records, recordsLoading, summary, busy, error, onGenerate }) {
   return <section className="client-card client-panel client-ai-history">
     <div className="client-section-heading">
       <div><span className="eyebrow">TU EXPEDIENTE</span><h2>Historia clínica</h2><p>Genera una síntesis de las notas odontológicas registradas para tu cuenta.</p></div>
       <span className="profile-card-icon" aria-hidden="true">✦</span>
     </div>
     <div className="client-ai-privacy">
-      El servidor identifica tu cuenta y consulta únicamente tu historia clínica. Antes de enviar el texto a Azure OpenAI, enmascara identificadores directos detectables. El resumen se muestra solo aquí y no se guarda.
+      El servidor identifica tu cuenta y consulta únicamente tu historia clínica. Antes de enviar el texto al proveedor de IA configurado, enmascara identificadores directos detectables. El resumen se muestra solo aquí y no se guarda.
     </div>
     {error && <div className="client-alert" role="alert">{error}</div>}
-    <button className="client-primary" type="button" onClick={onGenerate} disabled={busy}>
+    {recordsLoading
+      ? <p role="status">Cargando tus notas clínicas…</p>
+      : records.length
+        ? <div className="client-clinical-records">{records.map((record) => (
+          <article className="client-clinical-record" key={record.id}>
+            <header><strong>{record.fechaCita}</strong><span>{record.profesional}</span></header>
+            <p><strong>Evolución:</strong> {record.evolucion}</p>
+            <p><strong>Diagnóstico:</strong> {record.diagnostico}</p>
+            <p><strong>Tratamiento:</strong> {record.tratamiento}</p>
+            <p><strong>Recomendaciones:</strong> {record.recomendaciones}</p>
+          </article>
+        ))}</div>
+        : <p>Aún no hay notas clínicas registradas en tu expediente.</p>}
+    <button className="client-primary" type="button" onClick={onGenerate} disabled={busy || recordsLoading || records.length === 0}>
       {busy ? 'Generando resumen…' : '✦ Generar resumen con IA'}
     </button>
     {summary && <article className="client-ai-summary" aria-live="polite">
       <header><div><span className="eyebrow">RESUMEN ASISTIDO POR IA</span><h3>Tu historia clínica odontológica</h3></div><small>{summary.generadoEn ? new Date(summary.generadoEn).toLocaleString('es-CO') : ''}</small></header>
       <p>{summary.resumen}</p>
-      <small>Este resumen es informativo y no reemplaza la valoración de tu profesional de salud.</small>
+      <small>Proveedor: {summary.proveedor}. Este resumen es informativo y no reemplaza la valoración de tu profesional de salud.</small>
     </article>}
   </section>
+}
+
+function mapPatientPortalAppointment(item, session) {
+  return {
+    id: String(item.id),
+    clientId: session.id,
+    patientId: session.identification || '',
+    patientName: session.name || '',
+    patientEmail: session.email || '',
+    date: item.fecha,
+    startTime: item.horaInicio?.slice(0, 5) || '',
+    endTime: item.horaFin?.slice(0, 5) || '',
+    typeName: item.servicioNombre || item.motivo || VISIT_TYPE,
+    professionalName: item.profesionalNombre || GENERAL_DENTIST,
+    spaceName: item.espacioNombre || '',
+    status: item.estado === 'CANCELADA'
+      ? 'cancelled'
+      : item.estado === 'PROGRAMADA'
+        ? 'scheduled'
+        : 'completed',
+  }
 }
 
 function AppointmentsView({ appointments, history, onBook, onReschedule, onCancel }) {
