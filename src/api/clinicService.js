@@ -94,6 +94,7 @@ function mapAppointment(item) {
   return {
     id: idString(item.id),
     patientKind: 'unregistered',
+    patientDbId: idString(patient.id),
     patientId: patient.documento || '',
     patientName: patient.nombre || '',
     patientPhone: patient.telefono || '',
@@ -110,6 +111,33 @@ function mapAppointment(item) {
     endTime: item.horaFin?.slice(0, 5) || '',
     bufferEndTime: item.horaFin?.slice(0, 5) || '',
     duration: service.duracionMinutos || 30,
+    status: item.estado === 'CANCELADA' ? 'cancelled' : 'scheduled',
+    notes: item.motivo || '',
+  }
+}
+
+function mapMyAgendaItem(item) {
+  const session = readSession()
+  return {
+    id: idString(item.citaId),
+    patientKind: 'unregistered',
+    patientDbId: idString(item.pacienteId),
+    patientId: item.pacienteDocumento || idString(item.pacienteId),
+    patientName: item.pacienteNombre || '',
+    patientPhone: '',
+    patientEmail: '',
+    professionalId: idString(session?.id),
+    professionalName: session?.name || session?.username || '',
+    specialty: session?.specialty || '',
+    typeId: '',
+    typeName: item.servicioNombre || '',
+    spaceId: '',
+    spaceName: item.espacioNombre || '',
+    date: item.fecha,
+    startTime: item.horaInicio?.slice(0, 5) || '',
+    endTime: item.horaFin?.slice(0, 5) || '',
+    bufferEndTime: item.horaFin?.slice(0, 5) || '',
+    duration: 30,
     status: item.estado === 'CANCELADA' ? 'cancelled' : 'scheduled',
     notes: item.motivo || '',
   }
@@ -283,6 +311,19 @@ export const blockService = {
 }
 
 export const appointmentService = {
+  myAgenda: async (fechaInicio, fechaFin) => {
+    if (isDemoSession()) {
+      const session = readSession()
+      const all = await demoClinicService.appointments.list()
+      return all.filter((item) => item.professionalId === session?.id)
+    }
+    const params = new URLSearchParams()
+    if (fechaInicio) params.set('fechaInicio', fechaInicio)
+    if (fechaFin) params.set('fechaFin', fechaFin)
+    const query = params.toString() ? `?${params.toString()}` : ''
+    const items = await apiRequest(`/v1/profesionales/mi-agenda${query}`)
+    return items.map(mapMyAgendaItem)
+  },
   list: async () => {
     const appointments = isDemoSession()
       ? await demoClinicService.appointments.list()
@@ -450,8 +491,12 @@ export const referralService = {
   },
   listAcceptedForProfessional: async (professionalId) => {
     if (isDemoSession()) return (await demoClinicService.referrals.listForProfessional(professionalId)).filter((item) => item.status === 'accepted')
-    const items = await referralService.listForProfessional(professionalId)
-    return items.filter((item) => item.status === 'accepted')
+    try {
+      const items = await referralService.listForProfessional(professionalId)
+      return items.filter((item) => item.status === 'accepted')
+    } catch {
+      return []
+    }
   },
   pendingCount: async (professionalId) => {
     if (isDemoSession()) return demoClinicService.referrals.pendingCount(professionalId)
@@ -484,16 +529,33 @@ export const referralService = {
   approveInformationAccess: (referral) => sharedReferralAccessService.allowReferralAccess(referral),
 }
 
+async function resolvePatientDbId(patientIdOrDoc) {
+  const raw = String(patientIdOrDoc || '').trim()
+  if (!raw) return raw
+  try {
+    const patients = await apiRequest('/pacientes')
+    const byDoc = patients.find((p) => String(p.documento) === raw)
+    if (byDoc) return idString(byDoc.id)
+  } catch {
+    // Fallback al valor original
+  }
+  return raw
+}
+
 export const clinicalHistoryService = {
-  list: async (patientId) => isDemoSession()
-    ? demoClinicService.histories.list(patientId)
-    : apiRequest(`/v1/pacientes/${patientId}/historia-clinica`),
-  create: async (patientId, data) => isDemoSession()
-    ? demoClinicService.histories.create(patientId, data)
-    : apiRequest(`/v1/pacientes/${patientId}/historia-clinica`, {
+  list: async (patientId) => {
+    if (isDemoSession()) return demoClinicService.histories.list(patientId)
+    const dbId = await resolvePatientDbId(patientId)
+    return apiRequest(`/v1/pacientes/${dbId}/historia-clinica`)
+  },
+  create: async (patientId, data) => {
+    if (isDemoSession()) return demoClinicService.histories.create(patientId, data)
+    const dbId = await resolvePatientDbId(patientId)
+    return apiRequest(`/v1/pacientes/${dbId}/historia-clinica`, {
       method: 'POST',
       body: JSON.stringify(data),
-    }),
+    })
+  },
 }
 
 export const clinicalSummaryService = {

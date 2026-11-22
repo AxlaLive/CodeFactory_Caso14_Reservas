@@ -71,6 +71,10 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
 
     boolean existsByPacienteIdAndProfesionalId(Long pacienteId, Long profesionalId);
 
+    @EntityGraph(attributePaths = {"profesional", "espacioFisico", "paciente", "servicio"})
+    List<Cita> findByProfesionalIdAndFechaBetweenOrderByFechaAscHoraInicioAsc(
+            Long profesionalId, LocalDate fechaInicio, LocalDate fechaFin);
+
     List<Cita> findByPacienteIdAndFechaGreaterThanEqualAndEstadoNotOrderByFechaAscHoraInicioAsc(
             Long pacienteId,
             LocalDate fechaActual,

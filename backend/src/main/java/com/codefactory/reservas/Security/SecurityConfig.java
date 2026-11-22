@@ -112,6 +112,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/h2-console/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/profesionales/mi-agenda")
+                        .hasRole("PROFESSIONAL")
                         .requestMatchers(HttpMethod.GET, "/api/pacientes/me", "/api/pacientes/me/**")
                         .hasAnyRole("PACIENTE", "CLIENTE")
                         .requestMatchers(HttpMethod.GET, "/api/servicios", "/api/servicios/**")
