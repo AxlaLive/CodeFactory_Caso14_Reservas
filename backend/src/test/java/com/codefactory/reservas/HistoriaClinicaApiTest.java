@@ -108,7 +108,7 @@ class HistoriaClinicaApiTest {
     }
 
     @Test
-    void assignedProfessionalCanWriteAndInternalRolesCanReadClinicalHistory() throws Exception {
+    void assignedProfessionalCanWriteAndReadClinicalHistory() throws Exception {
         String path = "/api/v1/pacientes/" + paciente.getId() + "/historia-clinica";
         String request = """
                 {
@@ -129,9 +129,13 @@ class HistoriaClinicaApiTest {
                 .andExpect(jsonPath("$.diagnostico").value("Revisión sin hallazgos."));
 
         mockMvc.perform(get(path)
-                        .header("Authorization", "Bearer " + token(otroProfesional)))
+                        .header("Authorization", "Bearer " + token(profesional)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].evolucion").value("Paciente estable."));
+
+        mockMvc.perform(get(path)
+                        .header("Authorization", "Bearer " + token(otroProfesional)))
+                .andExpect(status().isForbidden());
 
         mockMvc.perform(get(path)
                         .header("Authorization", "Bearer " + token(recepcionista)))
