@@ -1,27 +1,34 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { demoAccounts } from '../api/demoClinicService'
+import PasswordInput from '../components/PasswordInput'
 
 export default function LoginPage({ onLogin }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const passwordInputRef = useRef(null)
 
   const submit = async (event) => {
     event.preventDefault()
     setError('')
+    const submittedPassword = password
+    setPassword('')
+    passwordInputRef.current?.hide()
     try {
-      await onLogin({ username, password })
-    } catch (formError) {
-      setError(formError.message)
+      await onLogin({ username, password: submittedPassword })
+    } catch {
+      setError('No fue posible iniciar sesión. Revisa tus datos e inténtalo de nuevo.')
     }
   }
 
   const enterDemo = async (account) => {
     setError('')
+    setPassword('')
+    passwordInputRef.current?.hide()
     try {
       await onLogin({ username: account.username, password: account.password })
-    } catch (loginError) {
-      setError(loginError.message)
+    } catch {
+      setError('No fue posible iniciar sesión con este perfil de prueba.')
     }
   }
 
@@ -52,18 +59,18 @@ export default function LoginPage({ onLogin }) {
               required
             />
           </label>
-          <label>
-            Contraseña
-            <input
+          <div className="password-form-field">
+            <label htmlFor="login-password">Contraseña</label>
+            <PasswordInput
+              ref={passwordInputRef}
               id="login-password"
               name="password"
-              type="password"
               autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
             />
-          </label>
+          </div>
         </div>
         {error && <div className="form-error" role="alert">{error}</div>}
         <button className="primary-button login-button" type="submit">
@@ -89,7 +96,7 @@ export default function LoginPage({ onLogin }) {
               </button>
             ))}
           </div>
-          <small>Contraseña para perfiles demo: {demoAccounts[0].password}</small>
+          <small>Selecciona un perfil para ingresar con una cuenta de prueba.</small>
         </section>
       </form>
     </main>

@@ -44,7 +44,7 @@ public class AgendaService {
     public Cita crearCitaDesdeAgenda(CitaRequest request) {
         validarRequest(request);
 
-        Profesional profesional = profesionalRepository.findById(request.profesionalId())
+        Profesional profesional = profesionalRepository.findByIdForUpdate(request.profesionalId())
                 .orElseThrow(() -> new ValidationException("El profesional seleccionado no existe."));
         EspacioFisico espacio = espacioRepository.findById(request.espacioId())
                 .orElseThrow(() -> new ValidationException("El espacio físico seleccionado no existe."));

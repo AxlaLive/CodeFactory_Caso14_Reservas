@@ -2,8 +2,8 @@ package com.codefactory.reservas.repository;
 
 import com.codefactory.reservas.domain.Cita;
 import jakarta.persistence.LockModeType;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -70,8 +70,22 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
     boolean existsByPacienteId(Long pacienteId);
 
     boolean existsByPacienteIdAndProfesionalId(Long pacienteId, Long profesionalId);
-    
+
     @EntityGraph(attributePaths = {"profesional", "espacioFisico", "paciente", "servicio"})
     List<Cita> findByProfesionalIdAndFechaBetweenOrderByFechaAscHoraInicioAsc(
             Long profesionalId, LocalDate fechaInicio, LocalDate fechaFin);
+
+    List<Cita> findByPacienteIdAndFechaGreaterThanEqualAndEstadoNotOrderByFechaAscHoraInicioAsc(
+            Long pacienteId,
+            LocalDate fechaActual,
+            String estadoExcluido
+    );
+
+    @Query("SELECT c FROM Cita c WHERE c.paciente.id = :pacienteId " +
+            "AND (c.fecha < :fechaActual OR UPPER(c.estado) IN ('ATENDIDA', 'COMPLETADA')) " +
+            "ORDER BY c.fecha DESC, c.horaInicio DESC")
+    List<Cita> findHistorialClinicoByPacienteId(
+            @Param("pacienteId") Long pacienteId,
+            @Param("fechaActual") LocalDate fechaActual
+    );
 }

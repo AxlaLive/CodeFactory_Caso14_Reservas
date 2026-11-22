@@ -158,7 +158,24 @@ function addMissingSeedItems(key, initial) {
   if (additions.length) writeList(key, [...current, ...additions])
 }
 
+function withoutCredentials(user) {
+  const { password: _password, passwordConfirmation: _passwordConfirmation, ...safeUser } = user
+  return safeUser
+}
+
+function sanitizeStoredCredentials(key, initial) {
+  const users = readList(key, initial)
+  const sanitizedUsers = users.map(withoutCredentials)
+  const hasStoredCredentials = users.some((user) =>
+    Object.hasOwn(user, 'password') || Object.hasOwn(user, 'passwordConfirmation'),
+  )
+  if (hasStoredCredentials) writeList(key, sanitizedUsers)
+  return sanitizedUsers
+}
+
 function ensureDemoData() {
+  sanitizeStoredCredentials(STORAGE_KEYS.users, initialProfessionals)
+  sanitizeStoredCredentials(STORAGE_KEYS.professionals, initialProfessionals)
   addMissingSeedItems(STORAGE_KEYS.appointments, initialAppointments)
   addMissingSeedItems(STORAGE_KEYS.professionals, initialProfessionals)
   addMissingSeedItems(STORAGE_KEYS.spaces, initialSpaces)
@@ -174,14 +191,6 @@ export function demoSessionForCredentials(username, password) {
   ensureDemoData()
   const { password: _password, ...session } = account
   return { ...session, demoMode: true }
-}
-
-export function isDemoSession() {
-  try {
-    return JSON.parse(window.localStorage.getItem('dentia-auth') || 'null')?.demoMode === true
-  } catch {
-    return false
-  }
 }
 
 export const demoClinicService = {
@@ -224,10 +233,16 @@ export const demoClinicService = {
     },
   },
   users: {
-    list: async () => readList(STORAGE_KEYS.users, initialProfessionals),
+    list: async () => {
+      const users = sanitizeStoredCredentials(STORAGE_KEYS.users, initialProfessionals)
+      sanitizeStoredCredentials(STORAGE_KEYS.professionals, initialProfessionals)
+      return users
+    },
     create: async (data) => {
+      sanitizeStoredCredentials(STORAGE_KEYS.users, initialProfessionals)
+      sanitizeStoredCredentials(STORAGE_KEYS.professionals, initialProfessionals)
       const user = saveListItem(STORAGE_KEYS.users, initialProfessionals, {
-        ...data,
+        ...withoutCredentials(data),
         active: true,
       }, 'demo-user')
       if (data.roleType === 'professional') {

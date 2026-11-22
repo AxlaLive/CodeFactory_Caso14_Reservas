@@ -322,7 +322,7 @@ export default function ClientPage({ session, onUpdateSession, onLogout }) {
           <div className="client-header-user"><span className="client-status-dot" /> Sesión activa <b>{initials}</b></div>
         </header>
         <div className="client-content">
-          {pageError && <div className="client-alert" role="alert">{pageError}<button onClick={() => setPageError('')} aria-label="Cerrar">×</button></div>}
+          {pageError && !booking && <div className="client-alert" role="alert">{pageError}<button onClick={() => setPageError('')} aria-label="Cerrar">×</button></div>}
           {notice && <div className="client-notice" role="status">{notice}</div>}
           {loading ? <div className="client-card client-loading">Cargando tu portal…</div> : <>
             {view === 'appointments' && <AppointmentsView appointments={upcomingAppointments} history={historyAppointments} onBook={() => startBooking()} onReschedule={startBooking} onCancel={cancelAppointment} />}
@@ -334,7 +334,21 @@ export default function ClientPage({ session, onUpdateSession, onLogout }) {
           </>}
         </div>
       </main>
-      {booking && <BookingDialog booking={booking} slots={availableSlots} busy={busy} onChange={(field, value) => setBooking((current) => ({ ...current, [field]: value, ...(field === 'date' ? { startTime: '' } : {}) }))} onSubmit={saveBooking} onClose={() => setBooking(null)} />}
+      {booking && <BookingDialog
+        booking={booking}
+        slots={availableSlots}
+        busy={busy}
+        error={pageError}
+        onChange={(field, value) => {
+          setPageError('')
+          setBooking((current) => ({ ...current, [field]: value, ...(field === 'date' ? { startTime: '' } : {}) }))
+        }}
+        onSubmit={saveBooking}
+        onClose={() => {
+          setPageError('')
+          setBooking(null)
+        }}
+      />}
     </div>
   )
 }
@@ -377,15 +391,16 @@ function AppointmentsView({ appointments, history, onBook, onReschedule, onCance
   </>
 }
 
-function BookingDialog({ booking, slots, busy, onChange, onSubmit, onClose }) {
-  return <div className="client-dialog-backdrop" onMouseDown={onClose}><form className="client-dialog client-booking-dialog" onSubmit={onSubmit} onMouseDown={(event) => event.stopPropagation()}>
-    <header><div><span className="eyebrow">{booking.id ? 'Gestiona tu cita' : 'Nueva reserva'}</span><h2>{booking.id ? 'Reprogramar cita' : 'Reserva tu cita'}</h2></div><button type="button" className="dialog-close" onClick={onClose} aria-label="Cerrar">×</button></header>
+function BookingDialog({ booking, slots, busy, error, onChange, onSubmit, onClose }) {
+  return <div className="client-dialog-backdrop" onMouseDown={onClose}><form className="client-dialog client-booking-dialog" role="dialog" aria-modal="true" aria-labelledby="booking-title" onSubmit={onSubmit} onMouseDown={(event) => event.stopPropagation()}>
+    <header><div><span className="eyebrow">{booking.id ? 'Gestiona tu cita' : 'Nueva reserva'}</span><h2 id="booking-title">{booking.id ? 'Reprogramar cita' : 'Reserva tu cita'}</h2></div><button type="button" className="dialog-close" onClick={onClose} aria-label="Cerrar">×</button></header>
     <p className="booking-type"><span>✦</span><span><strong>Odontología general</strong><small>Consulta general · 30 minutos</small></span><b>{formatMoney(GENERAL_APPOINTMENT_PRICE)}</b></p>
     <div className="client-assignment-note"><span>✦</span><div><strong>Asignación automática</strong><small>Te asignaremos un odontólogo general con disponibilidad.</small></div></div>
     <label className="client-field">Fecha<input type="date" min={toDateKey(new Date())} value={booking.date} onChange={(event) => onChange('date', event.target.value)} required /></label>
     {booking.date && <fieldset className="client-time-picker"><legend>Horarios disponibles</legend>{slots.length ? <div>{slots.map((slot) => <button type="button" key={slot.time} className={booking.startTime === slot.time ? 'selected' : ''} onClick={() => onChange('startTime', slot.time)}>{slot.time}</button>)}</div> : <p>No hay horarios disponibles para esta fecha. Prueba con otro día.</p>}</fieldset>}
     <label className="client-field">Motivo de consulta (opcional)<textarea rows="3" value={booking.notes} onChange={(event) => onChange('notes', event.target.value)} placeholder="Cuéntanos brevemente el motivo de tu visita" /></label>
     <p className="client-disclaimer">La disponibilidad se muestra con la información guardada en este navegador.</p>
+    {error && <div className="client-alert" role="alert">{error}</div>}
     <footer><button type="button" className="client-secondary" onClick={onClose}>Volver</button><button type="submit" className="client-primary" disabled={busy || !booking.startTime}>{busy ? 'Guardando…' : booking.id ? 'Guardar cambios' : 'Confirmar cita'}</button></footer>
   </form></div>
 }

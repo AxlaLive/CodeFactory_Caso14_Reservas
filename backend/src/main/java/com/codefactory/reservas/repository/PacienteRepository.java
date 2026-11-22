@@ -3,7 +3,9 @@ package com.codefactory.reservas.repository;
 import com.codefactory.reservas.domain.Paciente;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Optional;
+
 public interface PacienteRepository extends JpaRepository<Paciente, Long> {
-    java.util.Optional<Paciente> findByDocumento(String documento);
-    java.util.Optional<Paciente> findByCorreo(String correo); // Nueva línea
+    Optional<Paciente> findByDocumento(String documento);
+    Optional<Paciente> findByCorreo(String correo);
 }

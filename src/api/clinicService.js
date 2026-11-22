@@ -1,10 +1,11 @@
-import { demoClinicService, demoSessionForCredentials, isDemoSession } from './demoClinicService'
+import { demoClinicService, demoSessionForCredentials } from './demoClinicService'
 import { sharedReferralAccessService } from './sharedReferralAccessService'
 
 const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 ).replace(/\/+$/, '')
 const AUTH_STORAGE_KEY = 'dentia-auth'
+let currentSession = null
 
 async function apiRequest(path, options = {}) {
   const session = readSession()
@@ -30,15 +31,15 @@ async function apiRequest(path, options = {}) {
 }
 
 function readSession() {
-  try {
-    const session = JSON.parse(window.localStorage.getItem(AUTH_STORAGE_KEY) || 'null')
-    const demoRoles = ['admin', 'professional', 'receptionist', 'client']
-    return session?.token || (session?.demoMode === true && demoRoles.includes(session.role))
-      ? session
-      : null
-  } catch {
-    return null
-  }
+  return currentSession
+}
+
+function isDemoSession() {
+  return currentSession?.demoMode === true
+}
+
+function clearPersistedSession() {
+  window.localStorage.removeItem(AUTH_STORAGE_KEY)
 }
 
 function idString(id) {
@@ -155,9 +156,9 @@ function mapBlock(item) {
         ? 'available'
         : item.tipo === 'UNAVAILABLE'
           ? 'unavailable'
-        : item.tipo === 'OTHER'
-          ? 'other'
-          : 'admin',
+          : item.tipo === 'OTHER'
+            ? 'other'
+            : 'admin',
     label: item.motivo || '',
   }
 }
@@ -433,8 +434,8 @@ export const userService = {
   create: async (data) => isDemoSession()
     ? demoClinicService.users.create(data)
     : mapWorker(await apiRequest('/v1/trabajadores', {
-    method: 'POST',
-    body: JSON.stringify(data),
+      method: 'POST',
+      body: JSON.stringify(data),
     })),
 }
 
@@ -445,18 +446,18 @@ export const spaceService = {
   create: async (data) => isDemoSession()
     ? demoClinicService.spaces.create(data)
     : mapSpace(await apiRequest('/espacios', {
-    method: 'POST',
-    body: JSON.stringify({ nombre: data.name, tipo: data.type, activo: true }),
+      method: 'POST',
+      body: JSON.stringify({ nombre: data.name, tipo: data.type, activo: true }),
     })),
   update: async (id, data) => isDemoSession()
     ? demoClinicService.spaces.update(id, data)
     : mapSpace(await apiRequest(`/espacios/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify({
-      nombre: data.name,
-      tipo: data.type,
-      activo: data.active !== false,
-    }),
+      method: 'PUT',
+      body: JSON.stringify({
+        nombre: data.name,
+        tipo: data.type,
+        activo: data.active !== false,
+      }),
     })),
   remove: async (id) => {
     if (isDemoSession()) return demoClinicService.spaces.remove(id)
@@ -472,14 +473,14 @@ export const patientService = {
   create: async (data) => isDemoSession()
     ? demoClinicService.patients.create(data)
     : mapPatient(await apiRequest('/pacientes', {
-    method: 'POST',
-    body: JSON.stringify({
-      nombre: data.name.trim(),
-      documento: data.identification.trim(),
-      telefono: data.phone.trim() || null,
-      correo: data.email.trim() || null,
-      activo: true,
-    }),
+      method: 'POST',
+      body: JSON.stringify({
+        nombre: data.name.trim(),
+        documento: data.identification.trim(),
+        telefono: data.phone.trim() || null,
+        correo: data.email.trim() || null,
+        activo: true,
+      }),
     })),
 }
 
@@ -568,38 +569,40 @@ export const clinicalSummaryService = {
 
 export const authService = {
   login: async ({ username, password }) => {
-    try {
-      const response = await apiRequest('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ username: username.trim(), password }),
-      })
-      const session = {
-        token: response.token,
-        username: response.username,
-        name: response.name || response.username,
-        id: idString(response.id ?? response.username),
-        email: response.email || (String(response.username || '').includes('@') ? response.username : ''),
-        specialty: response.specialty || '',
-        role: mapRole(response.role),
-      }
-      window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
-      return session
-    } catch (error) {
-      const demoSession = demoSessionForCredentials(username, password)
-      if (demoSession && error.message === 'Failed to fetch') {
-        window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(demoSession))
-        return demoSession
-      }
-      throw error
+    currentSession = null
+    clearPersistedSession()
+    const demoSession = demoSessionForCredentials(username, password)
+    if (demoSession) {
+      currentSession = demoSession
+      return demoSession
     }
+
+    const response = await apiRequest('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username: username.trim(), password }),
+    })
+    const session = {
+      token: response.token,
+      username: response.username,
+      name: response.name || response.username,
+      id: idString(response.id ?? response.username),
+      email: response.email || (String(response.username || '').includes('@') ? response.username : ''),
+      specialty: response.specialty || '',
+      role: mapRole(response.role),
+    }
+    currentSession = session
+    return session
   },
   updateCustomer: async (id, changes) => {
     if (!isDemoSession()) throw new Error('La edición del perfil de paciente aún no está conectada al servidor.')
     const session = await demoClinicService.updateCustomer(id, changes)
-    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
+    currentSession = session
     return session
   },
-  session: readSession,
+  session: () => {
+    clearPersistedSession()
+    return readSession()
+  },
   isTokenExpired: () => {
     const session = readSession()
     if (!session?.token) return false
@@ -617,5 +620,53 @@ export const authService = {
       throw new Error('No se pudo validar la expiración de la sesión.')
     }
   },
-  logout: () => window.localStorage.removeItem(AUTH_STORAGE_KEY),
+  logout: () => {
+    currentSession = null
+    clearPersistedSession()
+  },
+}
+
+export const patientPortalService = {
+  getProfile: async (session) => {
+    if (!session?.token) return null
+    const response = await fetch(`${API_BASE_URL}/pacientes/me`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.token}`,
+      },
+    })
+    if (!response.ok) {
+      const body = await response.json().catch(() => null)
+      throw new Error(body?.message || 'No fue posible cargar el perfil del paciente.')
+    }
+    return response.json()
+  },
+  getUpcomingAppointments: async (session) => {
+    if (!session?.token) return null
+    const response = await fetch(`${API_BASE_URL}/pacientes/me/proximas-citas`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.token}`,
+      },
+    })
+    if (!response.ok) {
+      const body = await response.json().catch(() => null)
+      throw new Error(body?.message || 'No fue posible cargar las próximas citas.')
+    }
+    return response.json()
+  },
+  getClinicalHistory: async (session) => {
+    if (!session?.token) return null
+    const response = await fetch(`${API_BASE_URL}/pacientes/me/historial-clinico`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.token}`,
+      },
+    })
+    if (!response.ok) {
+      const body = await response.json().catch(() => null)
+      throw new Error(body?.message || 'No fue posible consultar el historial clínico.')
+    }
+    return response.json()
+  },
 }
