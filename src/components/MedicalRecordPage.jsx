@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { authService, clinicalSummaryService } from '../api/clinicService'
 import { medicalRecordService } from '../api/medicalRecordService'
+import MarkdownContent from './MarkdownContent'
 import PrescriptionPanel from './PrescriptionPanel'
 import ReferralPanel from './ReferralPanel'
 import TreatmentPlanPanel from './TreatmentPlanPanel'
@@ -234,7 +235,7 @@ export default function MedicalRecordPage({ appointment, session, activeView, on
             <div><span className="eyebrow">Resumen asistido por IA</span><h3>Historia clínica odontológica</h3></div>
             <small>{clinicalSummary.generadoEn ? new Date(clinicalSummary.generadoEn).toLocaleString('es-CO') : ''}</small>
           </div>
-          <p>{clinicalSummary.resumen}</p>
+          <MarkdownContent>{clinicalSummary.resumen}</MarkdownContent>
         </section>
       )}
 

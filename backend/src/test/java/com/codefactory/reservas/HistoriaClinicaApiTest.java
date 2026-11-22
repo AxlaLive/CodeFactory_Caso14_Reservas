@@ -176,7 +176,7 @@ class HistoriaClinicaApiTest {
 
     @Test
     void patientCanGenerateOnlyTheirOwnSummaryAndClinicalTextIsSanitized() throws Exception {
-        String email = "cliente" + paciente.getDocumento() + "@example.com";
+        String email = "paciente.demo.0001@example.invalid";
         paciente.setCorreo(email);
         paciente.setTelefono("3001234567");
         pacienteRepository.save(paciente);
@@ -279,7 +279,8 @@ class HistoriaClinicaApiTest {
 
     @Test
     void patientCannotAccessStaffPatientList() throws Exception {
-        String email = "cliente" + paciente.getDocumento() + "@example.com";
+        String email = "cliente" + UUID.randomUUID().toString().replace("-", "")
+                + "@example.invalid";
         Cliente client = new Cliente();
         client.setCorreo(email);
         client.setDocumento(paciente.getDocumento());
