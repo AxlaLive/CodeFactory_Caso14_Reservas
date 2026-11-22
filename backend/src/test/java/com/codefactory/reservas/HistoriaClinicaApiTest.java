@@ -253,11 +253,16 @@ class HistoriaClinicaApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.resumen").value("Resumen clínico de prueba."));
 
+        Profesional admin = guardarTrabajador(
+                "admin" + UUID.randomUUID().toString().replace("-", "").substring(0, 10),
+                "ADMIN",
+                UUID.randomUUID().toString().replace("-", "").substring(0, 10));
         mockMvc.perform(post(path)
-                        .header("Authorization", "Bearer " + jwtService.generateToken("admin"))
+                        .header("Authorization", "Bearer " + token(admin))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"documentoPaciente\":\"" + paciente.getDocumento() + "\"}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resumen").value("Resumen clínico de prueba."));
 
         mockMvc.perform(post(path)
                         .header("Authorization", "Bearer " + token(otroProfesional))
@@ -269,6 +274,22 @@ class HistoriaClinicaApiTest {
                         .header("Authorization", "Bearer " + token(recepcionista))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"documentoPaciente\":\"" + paciente.getDocumento() + "\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void patientCannotAccessStaffPatientList() throws Exception {
+        String email = "cliente" + paciente.getDocumento() + "@example.com";
+        Cliente client = new Cliente();
+        client.setCorreo(email);
+        client.setDocumento(paciente.getDocumento());
+        client.setPasswordHash(passwordEncoder.encode("secure123"));
+        client.setPaciente(paciente);
+        clienteRepository.saveAndFlush(client);
+
+        mockMvc.perform(get("/api/pacientes")
+                        .header("Authorization", "Bearer "
+                                + jwtService.generateToken(email, "ROLE_CLIENTE")))
                 .andExpect(status().isForbidden());
     }
 
