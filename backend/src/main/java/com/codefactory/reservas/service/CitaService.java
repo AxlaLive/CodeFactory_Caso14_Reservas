@@ -63,7 +63,8 @@ public class CitaService {
     private Cita guardarDesdeAgenda(CitaRequest request, Cita citaExistente) {
         validarCamposObligatorios(request);
 
-        Profesional profesional = profesionalRepository.findById(request.profesionalId())
+        // Bloquea la agenda del profesional hasta confirmar, incluso si todavía no tiene citas.
+        Profesional profesional = profesionalRepository.findByIdForUpdate(request.profesionalId())
                 .orElseThrow(() -> new ValidationException("El profesional seleccionado no existe."));
         EspacioFisico espacio = espacioRepository.findById(request.espacioId())
                 .orElseThrow(() -> new ValidationException("El espacio físico seleccionado no existe."));
