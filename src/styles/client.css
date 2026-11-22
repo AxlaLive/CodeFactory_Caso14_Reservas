@@ -269,7 +269,15 @@
 .client-ai-summary header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .client-ai-summary h3 { margin: 0; color: #304943; font: 700 15px Manrope,sans-serif; }
 .client-ai-summary header small { color: #82918b; font-size: 9px; }
-.client-ai-summary p { margin: 14px 0; color: #4a6358; font-size: 12px; line-height: 1.8; white-space: pre-wrap; }
+.ai-markdown-content { color: #4a6358; font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.ai-markdown-content h1, .ai-markdown-content h2, .ai-markdown-content h3, .ai-markdown-content h4, .ai-markdown-content h5, .ai-markdown-content h6 { margin: 14px 0 7px; color: #304943; font-family: Manrope, sans-serif; font-size: 1.05em; font-weight: 700; line-height: 1.4; }
+.ai-markdown-content p { margin: 9px 0; }
+.ai-markdown-content ul, .ai-markdown-content ol { padding-left: 22px; margin: 8px 0; }
+.ai-markdown-content li { padding-left: 3px; margin: 3px 0; }
+.ai-markdown-content hr { height: 1px; border: 0; margin: 12px 0; background: #dce9df; }
+.ai-markdown-content code { padding: 1px 4px; border-radius: 3px; background: #edf4ef; font-family: ui-monospace, monospace; }
+.client-ai-summary .ai-markdown-content { margin: 14px 0; }
+.medical-ai-summary .ai-markdown-content { margin-top: 13px; font-size: 11px; }
 .client-ai-summary > small { color: #82918b; font-size: 10px; }
 .health-form-panel > .client-section-heading { align-items: center; padding-bottom: 18px; border-bottom: 1px solid #e8efea; }
 .health-form-panel .client-section-heading h2 { font: 800 24px/1.2 Manrope,sans-serif; }

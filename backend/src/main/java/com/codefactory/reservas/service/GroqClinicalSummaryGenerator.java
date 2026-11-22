@@ -38,7 +38,7 @@ public class GroqClinicalSummaryGenerator implements ClinicalSummaryGenerator {
 
     public GroqClinicalSummaryGenerator(
             @Value("${ai.groq.api-key:}") String apiKey,
-            @Value("${ai.groq.model:llama-3.3-70b-versatile}") String model) {
+            @Value("${ai.groq.model:openai/gpt-oss-120b}") String model) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(Duration.ofSeconds(5));
         requestFactory.setReadTimeout(Duration.ofSeconds(30));

@@ -9,6 +9,7 @@ import {
   spaceService,
 } from '../api/clinicService'
 import { medicalRecordService } from '../api/medicalRecordService'
+import MarkdownContent from '../components/MarkdownContent'
 import { DAY_END, addMinutes, findBlockConflict, findConflict, formatLongDate, getSlotAvailability, getTimeOptions, toDateKey } from '../utils/agenda'
 import '../styles/client.css'
 
@@ -415,7 +416,7 @@ function PatientClinicalHistory({ records, recordsLoading, summary, busy, error,
     </button>
     {summary && <article className="client-ai-summary" aria-live="polite">
       <header><div><span className="eyebrow">RESUMEN ASISTIDO POR IA</span><h3>Tu historia clínica odontológica</h3></div><small>{summary.generadoEn ? new Date(summary.generadoEn).toLocaleString('es-CO') : ''}</small></header>
-      <p>{summary.resumen}</p>
+      <MarkdownContent>{summary.resumen}</MarkdownContent>
       <small>Proveedor: {summary.proveedor}. Este resumen es informativo y no reemplaza la valoración de tu profesional de salud.</small>
     </article>}
   </section>

@@ -50,7 +50,7 @@ class ClinicalSummarySanitizerTest {
     @Test
     void reportsMissingGroqApiKeyInsteadOfFabricatingASummary() {
         GroqClinicalSummaryGenerator generator =
-                new GroqClinicalSummaryGenerator("", "llama-3.3-70b-versatile");
+                new GroqClinicalSummaryGenerator("", "openai/gpt-oss-120b");
 
         ResponseStatusException exception = org.junit.jupiter.api.Assertions.assertThrows(
                 ResponseStatusException.class,

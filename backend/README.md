@@ -98,7 +98,7 @@ not remove an account that was already persisted.
 Clinical summaries are generated on demand from saved backend clinical notes.
 Groq is the default provider. Configure `GROQ_API_KEY` as a private environment
 variable on the backend; `GROQ_MODEL` is optional and defaults to
-`llama-3.3-70b-versatile`. To use Azure OpenAI instead, set `AI_PROVIDER=azure`
+`openai/gpt-oss-120b`. To use Azure OpenAI instead, set `AI_PROVIDER=azure`
 and configure `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, and
 `AZURE_OPENAI_DEPLOYMENT`; `AZURE_OPENAI_API_VERSION` is optional and defaults
 to `2024-10-21`. The Azure endpoint accepts only an HTTPS URL. The backend excludes
