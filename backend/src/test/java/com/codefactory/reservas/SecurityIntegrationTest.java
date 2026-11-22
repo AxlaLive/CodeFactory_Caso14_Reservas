@@ -21,6 +21,15 @@ public class SecurityIntegrationTest {
     private MockMvc mockMvc;
 
     @Test
+    @DisplayName("Debe exponer una respuesta publica de estado en la raiz")
+    void testHealthEndpointIsPublic() throws Exception {
+        mockMvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"))
+                .andExpect(jsonPath("$.service").value("reservas-backend"));
+    }
+
+    @Test
     @DisplayName("Debe autenticar correctamente con credenciales válidas")
     void testLoginExitoso() throws Exception {
         String loginJson = "{\"username\":\"admin@dentia.com\",\"password\":\"dentia123\"}";
