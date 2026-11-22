@@ -86,6 +86,14 @@ with login credentials, the initializer also creates `odontologo-demo` with
 that same password so the synthetic appointment histories can be opened by a professional account. The
 initializer is idempotent and can be disabled again by setting
 `DEMO_DATA_ENABLED=false`; it does not delete records already created.
+On Render, add `DEMO_DATA_ENABLED=true` and `DEMO_DATA_CLIENT_PASSWORD` to the
+backend Web Service environment and redeploy. The patient account login is the
+demo email above; use the password stored in that Render environment variable.
+The development-only default administrator is not created when the `prod`
+profile is active. Provision production staff accounts with unique credentials.
+If an older deployment already created `admin@dentia.com`, rotate or deactivate
+that existing account in the production database; disabling the initializer does
+not remove an account that was already persisted.
 
 Clinical summaries are generated on demand from saved backend clinical notes.
 Groq is the default provider. Configure `GROQ_API_KEY` as a private environment

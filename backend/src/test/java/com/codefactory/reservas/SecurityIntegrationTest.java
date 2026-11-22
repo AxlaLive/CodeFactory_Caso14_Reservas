@@ -53,6 +53,17 @@ public class SecurityIntegrationTest {
     }
 
     @Test
+    @DisplayName("No debe aceptar cuentas de prueba predefinidas")
+    void testRechazaCuentaDePacienteDePrueba() throws Exception {
+        String loginJson = "{\"username\":\"paciente1\",\"password\":\"paciente123\"}";
+
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(loginJson))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
     @DisplayName("Debe denegar el acceso a rutas protegidas sin token")
     void testRutaProtegidaSinToken() throws Exception {
         mockMvc.perform(get("/api/profesionales"))

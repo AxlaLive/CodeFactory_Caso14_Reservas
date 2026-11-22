@@ -197,6 +197,18 @@ class HistoriaClinicaApiTest {
                 "Caries dental en pieza posterior.",
                 "Restauración con resina.",
                 "Control odontológico."));
+
+        String clientToken = "Bearer " + jwtService.generateToken(email, "ROLE_CLIENTE");
+        mockMvc.perform(get("/api/pacientes/me")
+                .header("Authorization", clientToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.documento").value(paciente.getDocumento()));
+
+        mockMvc.perform(get("/api/pacientes/me/historias-clinicas")
+                .header("Authorization", clientToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].diagnostico").value("Caries dental en pieza posterior."));
+
         when(summaryGenerator.generate(anyString())).thenReturn("Resumen clínico de prueba.");
 
         String path = "/api/v1/historias-clinicas/resumen-ia";
@@ -206,7 +218,8 @@ class HistoriaClinicaApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.resumen").value("Resumen clínico de prueba."));
+                .andExpect(jsonPath("$.resumen").value("Resumen clínico de prueba."))
+                .andExpect(jsonPath("$.proveedor").value("Groq"));
 
         verify(summaryGenerator).generate(argThat(clinicalText ->
                 !clinicalText.contains(paciente.getNombre())

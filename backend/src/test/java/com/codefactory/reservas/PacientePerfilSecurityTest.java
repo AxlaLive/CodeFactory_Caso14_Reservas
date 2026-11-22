@@ -1,6 +1,7 @@
 package com.codefactory.reservas;
 
 import com.codefactory.reservas.domain.Cita;
+import com.codefactory.reservas.domain.Cliente;
 import com.codefactory.reservas.domain.EspacioFisico;
 import com.codefactory.reservas.domain.Paciente;
 import com.codefactory.reservas.domain.Profesional;
@@ -8,6 +9,8 @@ import com.codefactory.reservas.domain.Servicio;
 import com.codefactory.reservas.dto.PacientePerfilResponse;
 import com.codefactory.reservas.exception.ValidationException;
 import com.codefactory.reservas.repository.CitaRepository;
+import com.codefactory.reservas.repository.ClienteRepository;
+import com.codefactory.reservas.repository.HistoriaClinicaRepository;
 import com.codefactory.reservas.repository.PacienteRepository;
 import com.codefactory.reservas.service.PacientePerfilService;
 import org.junit.jupiter.api.Test;
@@ -34,7 +37,13 @@ class PacientePerfilSecurityTest {
     private PacienteRepository pacienteRepository;
 
     @Mock
+    private ClienteRepository clienteRepository;
+
+    @Mock
     private CitaRepository citaRepository;
+
+    @Mock
+    private HistoriaClinicaRepository historiaClinicaRepository;
 
     @InjectMocks
     private PacientePerfilService pacientePerfilService;
@@ -122,5 +131,21 @@ class PacientePerfilSecurityTest {
 
         assertThrows(ValidationException.class,
                 () -> pacientePerfilService.obtenerPerfilCompleto("33333333"));
+    }
+
+    @Test
+    void clienteAutenticadoPuedeResolverSuPacientePorCorreo() {
+        Paciente patient = new Paciente(4L, "Paciente demo", "DEMO-DENTIA-0001", true);
+        Cliente client = new Cliente();
+        client.setCorreo("paciente.demo.0001@example.invalid");
+        client.setPaciente(patient);
+        when(pacienteRepository.findByDocumento(client.getCorreo())).thenReturn(Optional.empty());
+        when(clienteRepository.findByCorreoIgnoreCase(client.getCorreo())).thenReturn(Optional.of(client));
+        when(historiaClinicaRepository.findByPacienteIdOrderByCreadoEnDesc(4L)).thenReturn(List.of());
+
+        assertTrue(pacientePerfilService.obtenerNotasClinicas(client.getCorreo()).isEmpty());
+
+        verify(clienteRepository).findByCorreoIgnoreCase(client.getCorreo());
+        verify(historiaClinicaRepository).findByPacienteIdOrderByCreadoEnDesc(4L);
     }
 }

@@ -226,7 +226,7 @@ export default function MedicalRecordPage({ appointment, session, activeView, on
         )}
       </header>
 
-      {canGenerateSummary && <p className="medical-ai-disclaimer">Se enviarán a Azure OpenAI notas clínicas con identificadores directos detectables enmascarados. El resumen no se guarda y no reemplaza el criterio profesional.</p>}
+      {canGenerateSummary && <p className="medical-ai-disclaimer">Se enviarán al proveedor de IA configurado notas clínicas con identificadores directos detectables enmascarados. El resumen no se guarda y no reemplaza el criterio profesional.</p>}
       {summaryError?.patientId === patientId && <div className="medical-error" role="alert">{summaryError.message}</div>}
       {clinicalSummary?.patientId === patientId && (
         <section className="medical-ai-summary" aria-live="polite">

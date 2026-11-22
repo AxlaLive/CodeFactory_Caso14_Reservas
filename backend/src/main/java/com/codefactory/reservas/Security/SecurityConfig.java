@@ -49,28 +49,11 @@ public class SecurityConfig {
 
     @Bean
     public UserDetailsService customUserDetailsService(
-            PasswordEncoder passwordEncoder,
             ProfesionalRepository profesionalRepository,
             ClienteRepository clienteRepository) {
-        UserDetails admin = User.withUsername("admin")
-                .password(passwordEncoder.encode("dentia123"))
-                .roles("ADMIN")
-                .build();
-
-        UserDetails pacientePrueba = User.withUsername("paciente1")
-                .password(passwordEncoder.encode("paciente123"))
-                .roles("PACIENTE")
-                .build();
-
         return username -> {
             if (username == null || username.isBlank()) {
                 throw new UsernameNotFoundException("Usuario no especificado.");
-            }
-            if ("admin".equalsIgnoreCase(username)) {
-                return admin;
-            }
-            if ("paciente1".equalsIgnoreCase(username)) {
-                return pacientePrueba;
             }
 
             String normalizedUsername = username.strip();
