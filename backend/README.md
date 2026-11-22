@@ -39,6 +39,9 @@ The default profile uses an in-memory H2 database. Flyway creates its schema
 from the versioned scripts in `src/main/resources/db/migration`, and Hibernate
 validates that the entities match that schema.
 
+The public `GET /` endpoint returns the backend health status as JSON. It is
+intended for deployment checks; the frontend is a separately deployed service.
+
 Run the tests with:
 
 ```sh
