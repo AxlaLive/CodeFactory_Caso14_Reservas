@@ -11,6 +11,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -32,6 +33,7 @@ import java.util.Locale;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
@@ -55,12 +57,20 @@ public class SecurityConfig {
                 .roles("ADMIN")
                 .build();
 
+        UserDetails pacientePrueba = User.withUsername("paciente1")
+                .password(passwordEncoder.encode("paciente123"))
+                .roles("PACIENTE")
+                .build();
+
         return username -> {
             if (username == null || username.isBlank()) {
                 throw new UsernameNotFoundException("Usuario no especificado.");
             }
             if ("admin".equalsIgnoreCase(username)) {
                 return admin;
+            }
+            if ("paciente1".equalsIgnoreCase(username)) {
+                return pacientePrueba;
             }
 
             String normalizedUsername = username.strip();
@@ -102,6 +112,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/h2-console/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/pacientes/me", "/api/pacientes/me/**")
+                        .hasAnyRole("PACIENTE", "CLIENTE")
                         .requestMatchers(HttpMethod.GET, "/api/servicios", "/api/servicios/**")
                         .hasAnyRole("ADMIN", "PROFESSIONAL", "RECEPTIONIST", "CLIENTE")
                         .requestMatchers(HttpMethod.POST, "/api/servicios")

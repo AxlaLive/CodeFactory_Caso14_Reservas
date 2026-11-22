@@ -128,9 +128,9 @@ function mapBlock(item) {
         ? 'available'
         : item.tipo === 'UNAVAILABLE'
           ? 'unavailable'
-        : item.tipo === 'OTHER'
-          ? 'other'
-          : 'admin',
+          : item.tipo === 'OTHER'
+            ? 'other'
+            : 'admin',
     label: item.motivo || '',
   }
 }
@@ -393,8 +393,8 @@ export const userService = {
   create: async (data) => isDemoSession()
     ? demoClinicService.users.create(data)
     : mapWorker(await apiRequest('/v1/trabajadores', {
-    method: 'POST',
-    body: JSON.stringify(data),
+      method: 'POST',
+      body: JSON.stringify(data),
     })),
 }
 
@@ -405,18 +405,18 @@ export const spaceService = {
   create: async (data) => isDemoSession()
     ? demoClinicService.spaces.create(data)
     : mapSpace(await apiRequest('/espacios', {
-    method: 'POST',
-    body: JSON.stringify({ nombre: data.name, tipo: data.type, activo: true }),
+      method: 'POST',
+      body: JSON.stringify({ nombre: data.name, tipo: data.type, activo: true }),
     })),
   update: async (id, data) => isDemoSession()
     ? demoClinicService.spaces.update(id, data)
     : mapSpace(await apiRequest(`/espacios/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify({
-      nombre: data.name,
-      tipo: data.type,
-      activo: data.active !== false,
-    }),
+      method: 'PUT',
+      body: JSON.stringify({
+        nombre: data.name,
+        tipo: data.type,
+        activo: data.active !== false,
+      }),
     })),
   remove: async (id) => {
     if (isDemoSession()) return demoClinicService.spaces.remove(id)
@@ -432,14 +432,14 @@ export const patientService = {
   create: async (data) => isDemoSession()
     ? demoClinicService.patients.create(data)
     : mapPatient(await apiRequest('/pacientes', {
-    method: 'POST',
-    body: JSON.stringify({
-      nombre: data.name.trim(),
-      documento: data.identification.trim(),
-      telefono: data.phone.trim() || null,
-      correo: data.email.trim() || null,
-      activo: true,
-    }),
+      method: 'POST',
+      body: JSON.stringify({
+        nombre: data.name.trim(),
+        documento: data.identification.trim(),
+        telefono: data.phone.trim() || null,
+        correo: data.email.trim() || null,
+        activo: true,
+      }),
     })),
 }
 
@@ -491,8 +491,8 @@ export const clinicalHistoryService = {
   create: async (patientId, data) => isDemoSession()
     ? demoClinicService.histories.create(patientId, data)
     : apiRequest(`/v1/pacientes/${patientId}/historia-clinica`, {
-    method: 'POST',
-    body: JSON.stringify(data),
+      method: 'POST',
+      body: JSON.stringify(data),
     }),
 }
 
@@ -561,5 +561,50 @@ export const authService = {
   logout: () => {
     currentSession = null
     clearPersistedSession()
+  },
+}
+
+export const patientPortalService = {
+  getProfile: async (session) => {
+    if (!session?.token) return null
+    const response = await fetch(`${API_BASE_URL}/pacientes/me`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.token}`,
+      },
+    })
+    if (!response.ok) {
+      const body = await response.json().catch(() => null)
+      throw new Error(body?.message || 'No fue posible cargar el perfil del paciente.')
+    }
+    return response.json()
+  },
+  getUpcomingAppointments: async (session) => {
+    if (!session?.token) return null
+    const response = await fetch(`${API_BASE_URL}/pacientes/me/proximas-citas`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.token}`,
+      },
+    })
+    if (!response.ok) {
+      const body = await response.json().catch(() => null)
+      throw new Error(body?.message || 'No fue posible cargar las próximas citas.')
+    }
+    return response.json()
+  },
+  getClinicalHistory: async (session) => {
+    if (!session?.token) return null
+    const response = await fetch(`${API_BASE_URL}/pacientes/me/historial-clinico`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.token}`,
+      },
+    })
+    if (!response.ok) {
+      const body = await response.json().catch(() => null)
+      throw new Error(body?.message || 'No fue posible consultar el historial clínico.')
+    }
+    return response.json()
   },
 }
